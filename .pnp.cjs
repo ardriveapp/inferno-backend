@@ -34,12 +34,14 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["@types/eslint", "npm:8.4.1"],\
+            ["@types/rimraf", "npm:3.0.2"],\
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["eslint", "npm:7.32.0"],\
             ["eslint-config-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:8.5.0"],\
             ["eslint-plugin-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:4.0.0"],\
             ["lint-staged", "npm:11.2.6"],\
             ["prettier", "npm:2.6.2"],\
+            ["rimraf", "npm:3.0.2"],\
             ["typescript", "patch:typescript@npm%3A4.6.3#~builtin<compat/typescript>::version=4.6.3&hash=bda367"]\
           ],\
           "linkType": "SOFT"\
@@ -225,6 +227,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["@types/glob", [\
+        ["npm:7.2.0", {\
+          "packageLocation": "./.yarn/cache/@types-glob-npm-7.2.0-772334bf9a-6ae717fedf.zip/node_modules/@types/glob/",\
+          "packageDependencies": [\
+            ["@types/glob", "npm:7.2.0"],\
+            ["@types/minimatch", "npm:3.0.5"],\
+            ["@types/node", "npm:17.0.25"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["@types/http-cache-semantics", [\
         ["npm:4.0.1", {\
           "packageLocation": "./.yarn/cache/@types-http-cache-semantics-npm-4.0.1-90863c7a3e-1048aacf62.zip/node_modules/@types/http-cache-semantics/",\
@@ -262,6 +275,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["@types/minimatch", [\
+        ["npm:3.0.5", {\
+          "packageLocation": "./.yarn/cache/@types-minimatch-npm-3.0.5-802bb0797f-c41d136f67.zip/node_modules/@types/minimatch/",\
+          "packageDependencies": [\
+            ["@types/minimatch", "npm:3.0.5"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["@types/node", [\
         ["npm:17.0.25", {\
           "packageLocation": "./.yarn/cache/@types-node-npm-17.0.25-cd1a2f2374-6a820bd624.zip/node_modules/@types/node/",\
@@ -285,6 +307,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-responselike-npm-1.0.0-85dd08af42-e99fc7cc62.zip/node_modules/@types/responselike/",\
           "packageDependencies": [\
             ["@types/responselike", "npm:1.0.0"],\
+            ["@types/node", "npm:17.0.25"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@types/rimraf", [\
+        ["npm:3.0.2", {\
+          "packageLocation": "./.yarn/cache/@types-rimraf-npm-3.0.2-dd6eb5de99-b47fa302f4.zip/node_modules/@types/rimraf/",\
+          "packageDependencies": [\
+            ["@types/rimraf", "npm:3.0.2"],\
+            ["@types/glob", "npm:7.2.0"],\
             ["@types/node", "npm:17.0.25"]\
           ],\
           "linkType": "HARD"\
@@ -1568,12 +1601,14 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["inferno-backend", "workspace:."],\
             ["@types/eslint", "npm:8.4.1"],\
+            ["@types/rimraf", "npm:3.0.2"],\
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["eslint", "npm:7.32.0"],\
             ["eslint-config-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:8.5.0"],\
             ["eslint-plugin-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:4.0.0"],\
             ["lint-staged", "npm:11.2.6"],\
             ["prettier", "npm:2.6.2"],\
+            ["rimraf", "npm:3.0.2"],\
             ["typescript", "patch:typescript@npm%3A4.6.3#~builtin<compat/typescript>::version=4.6.3&hash=bda367"]\
           ],\
           "linkType": "SOFT"\

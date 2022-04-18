@@ -10,8 +10,18 @@
 		"website": "https://ardrive.io"
 	},
 	"license": "AGPL-3.0",
+	"scripts": {
+		"clean": "rimraf [ lib .nyc_output node_modules coverage ]",
+		"format": "prettier --write \"src/**/*.ts\"",
+		"lint": "eslint . --ext .ts",
+		"lintfix": "eslint . --ext .ts --fix",
+		"typecheck": "tsc --noemit",
+		"build": "yarn clean && tsc --project ./tsconfig.prod.json",
+		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w"
+	},
 	"devDependencies": {
 		"@types/eslint": "^8",
+		"@types/rimraf": "^3",
 		"@yarnpkg/sdks": "^3.0.0-rc.2",
 		"eslint": "^7.23.0",
 		"eslint-config-prettier": "^8.1.0",
@@ -22,6 +32,7 @@
 	},
 	"packageManager": "yarn@3.2.0",
 	"dependencies": {
-		"eslint": "^8.13.0"
+		"eslint": "^8.13.0",
+		"rimraf": "^3.0.2"
 	}
 }

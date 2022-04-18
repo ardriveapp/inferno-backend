@@ -12,3 +12,6 @@
 
 # Node modules
 node_modules
+
+# Build
+/lib
