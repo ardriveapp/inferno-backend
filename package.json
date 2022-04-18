@@ -1,0 +1,25 @@
+{
+	"name": "inferno-backend",
+	"version": "1.0.0",
+	"description": "A token distributor for the Inferno Rewards program",
+	"main": "src/index.ts",
+	"repository": "git@github.com:ardriveapp/inferno-backend.git",
+	"author": {
+		"name": "Permanent Data Solutions Inc",
+		"email": "info@ardrive.io",
+		"website": "https://ardrive.io"
+	},
+	"license": "AGPL-3.0",
+	"devDependencies": {
+		"@types/eslint": "^8",
+		"@yarnpkg/sdks": "^3.0.0-rc.2",
+		"typescript": "^4.6.3"
+	},
+	"packageManager": "yarn@3.2.0",
+	"installConfig": {
+		"pnp": true
+	},
+	"dependencies": {
+		"eslint": "^8.13.0"
+	}
+}
