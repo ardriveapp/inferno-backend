@@ -1,4 +1,5 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_Types';
+import fetch from 'node-fetch';
 
 const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
