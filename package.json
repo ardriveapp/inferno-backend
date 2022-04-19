@@ -20,19 +20,14 @@
 		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w"
 	},
 	"devDependencies": {
-		"@types/eslint": "^8",
-		"@types/rimraf": "^3",
 		"@yarnpkg/sdks": "^3.0.0-rc.2",
-		"eslint": "^7.23.0",
+		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.1.0",
 		"eslint-plugin-prettier": "latest",
 		"lint-staged": "^11.0.0",
 		"prettier": "^2.2.1",
+		"rimraf": "^3.0.2",
 		"typescript": "^4.6.3"
 	},
-	"packageManager": "yarn@3.2.0",
-	"dependencies": {
-		"eslint": "^8.13.0",
-		"rimraf": "^3.0.2"
-	}
+	"packageManager": "yarn@3.2.0"
 }
