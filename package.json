@@ -20,6 +20,7 @@
 		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w"
 	},
 	"devDependencies": {
+		"@types/node": "^17.0.25",
 		"@yarnpkg/sdks": "^3.0.0-rc.2",
 		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.1.0",
@@ -32,6 +33,6 @@
 	"packageManager": "yarn@3.2.0",
 	"dependencies": {
 		"@types/node-fetch": "^2.6.1",
-		"node-fetch": "^3.2.3"
+		"node-fetch": "^2.6.1"
 	}
 }
