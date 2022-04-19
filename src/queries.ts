@@ -1,4 +1,4 @@
-import { GQLEdgeInterface, GQLNodeInterface } from './gql_Types';
+import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_Types';
 
 const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
@@ -14,13 +14,21 @@ export interface StakedPSTHolders {
 
 // export async function getStakedPSTHolders(): Promise<StakedPSTHolders> {}
 
-export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLNodeInterface[]> {
-	const query = createQuery(minBlock, maxBlock);
-	const response = await sendQuery(query);
-	return response.map((resp) => resp.node);
+export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
+	const allEdges: GQLEdgeInterface[] = [];
+	let hasNextPage = true;
+
+	while (hasNextPage) {
+		const query = createQuery(minBlock, maxBlock);
+		const response = await sendQuery(query);
+		allEdges.push(...response.edges);
+		hasNextPage = response.pageInfo.hasNextPage;
+	}
+
+	return allEdges;
 }
 
-async function sendQuery(query: Query): Promise<GQLEdgeInterface[]> {
+async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
 	// TODO: implement retry here
 	const response = fetch(GQL_URL, {
 		method: 'POST',
