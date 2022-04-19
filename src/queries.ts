@@ -31,7 +31,7 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
 	// TODO: implement retry here
-	const response = fetch(GQL_URL, {
+	const response = await fetch(GQL_URL, {
 		method: 'POST',
 		headers: {
 			'Accept-Encoding': 'gzip, deflate, br',
@@ -43,7 +43,13 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 		},
 		body: JSON.stringify(query)
 	});
-	return (await response).json();
+	const JSONBody = await response.json();
+	const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
+	if (errors) {
+		console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
+		throw new Error(errors.message);
+	}
+	return JSONBody.data.transactions as GQLTransactionsResultInterface;
 }
 
 function createQuery(minBlock: number, maxBlock: number): Query {
@@ -56,7 +62,7 @@ query {
 		tags: [
 			{
 				name: "App-Name"
-				values: ${VALID_APP_NAMES}
+				values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
 			}
 		]
 	) {
