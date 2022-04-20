@@ -17,13 +17,15 @@
 		"lintfix": "eslint . --ext .ts --fix",
 		"typecheck": "tsc --noemit",
 		"build": "yarn clean && tsc --project ./tsconfig.prod.json",
-		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w"
+		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w",
+		"prepare": "husky install"
 	},
 	"devDependencies": {
 		"@yarnpkg/sdks": "^3.0.0-rc.2",
 		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.1.0",
 		"eslint-plugin-prettier": "latest",
+		"husky": "^7.0.4",
 		"lint-staged": "^11.0.0",
 		"prettier": "^2.2.1",
 		"rimraf": "^3.0.2",
