@@ -1,10 +1,16 @@
-import { getAllTransactionsWithin } from './queries';
+// import { getAllTransactionsWithin } from './queries';
 
-const minBlock = 916705;
-const maxBlock = 916756;
+import { getWaleltsEligibleForStreak } from './queries';
 
-console.log('TESTING');
+// const minBlock = 916705;
+// const maxBlock = 916756;
 
-getAllTransactionsWithin(minBlock, maxBlock).then((edges) => {
-	console.log(JSON.stringify(edges, null, 4));
-});
+if (require.main === module) {
+	console.log('TESTING');
+
+	// getAllTransactionsWithin(minBlock, maxBlock).then((edges) => {
+	// 	console.log(JSON.stringify(edges, null, 4));
+	// });
+
+	getWaleltsEligibleForStreak().then((result) => console.log('Staked tokens:\n', JSON.stringify(result, null, 4)));
+}

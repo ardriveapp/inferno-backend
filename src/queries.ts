@@ -13,7 +13,37 @@ export interface StakedPSTHolders {
 	[address: string]: number;
 }
 
-// export async function getStakedPSTHolders(): Promise<StakedPSTHolders> {}
+export async function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
+	return getStakedPSTHolders()
+		.then((result) => Object.entries(result))
+		.then((entries) => entries.filter((data) => data[1] >= 200))
+		.then((entries) => Object.fromEntries(entries));
+}
+
+async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
+	// https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ
+	// const result = await vertoClient.getExchangeDetails('ARDRIVE');
+	const blockHeightRequest = await fetch('https://arweave.net/height');
+	const blockHeight = +(await (await blockHeightRequest.blob()).text());
+	const result = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
+	const holders = await result.json();
+	const vault = holders.state.vault;
+	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
+	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
+		address,
+		locks.reduce((accumulator, currentValue) => {
+			const start = currentValue.start;
+			const end = currentValue.end;
+			const lockedForAtLeastAMonth = blockHeight - start >= 21600;
+			const isStillLocked = end >= blockHeight;
+			if (lockedForAtLeastAMonth && isStillLocked) {
+				return accumulator + currentValue.balance;
+			}
+			return accumulator;
+		}, 0)
+	]);
+	return Object.fromEntries(stakedForAtLeastOneMonth);
+}
 
 export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
 	const allEdges: GQLEdgeInterface[] = [];
