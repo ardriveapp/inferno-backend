@@ -15,3 +15,9 @@ node_modules
 
 # Build
 /lib
+
+# Eslint cache
+.eslintcache
+
+# Output of nyc
+/.nyc_output

@@ -1,10 +1,12 @@
-import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_Types';
+import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import fetch from 'node-fetch';
 import { OutputData, Query, StakedPSTHolders } from './types';
 
 const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
 const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync'] as const;
+
+const BLOCKS_PER_MONTH = 21600;
 
 export async function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
@@ -14,20 +16,21 @@ export async function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
 }
 
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
-	// https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ
-	// const result = await vertoClient.getExchangeDetails('ARDRIVE');
 	const blockHeightRequest = await fetch('https://arweave.net/height');
-	const blockHeight = +(await (await blockHeightRequest.blob()).text());
-	const result = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
-	const holders = await result.json();
-	const vault = holders.state.vault;
+	const blockHeightBlob = await blockHeightRequest.blob();
+	const blockHeightText = await blockHeightBlob.text();
+	const blockHeight = +blockHeightText;
+	const pstRequest = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
+	const {
+		state: { vault }
+	} = await pstRequest.json();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
 	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
 		address,
 		locks.reduce((accumulator, currentValue) => {
 			const start = currentValue.start;
 			const end = currentValue.end;
-			const lockedForAtLeastAMonth = blockHeight - start >= 21600;
+			const lockedForAtLeastAMonth = blockHeight - start >= BLOCKS_PER_MONTH;
 			const isStillLocked = end >= blockHeight;
 			if (lockedForAtLeastAMonth && isStillLocked) {
 				return accumulator + currentValue.balance;
@@ -128,44 +131,44 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 function createQuery(minBlock: number, maxBlock: number): Query {
 	return {
 		query: `
-query {
-	transactions(
-		block: { max: ${maxBlock}, min: ${minBlock} }
-		first: ${ITEMS_PER_REQUEST}
-		tags: [
-			{
-				name: "App-Name"
-				values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
-			}
-		]
-	) {
-		pageInfo {
-			hasNextPage
-		}
-		edges {
-			cursor
-			node {
-				id
-				owner {
-					address
+			query {
+				transactions(
+					block: { max: ${maxBlock}, min: ${minBlock} }
+					first: ${ITEMS_PER_REQUEST}
+					tags: [
+						{
+							name: "App-Name"
+							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
+						}
+					]
+				) {
+					pageInfo {
+						hasNextPage
+					}
+					edges {
+						cursor
+						node {
+							id
+							owner {
+								address
+							}
+							bundledIn {
+								id
+							}
+							tags {
+								name
+								value
+							}
+							data {
+								size
+								type
+							}
+							quantity {
+								winston
+							}
+						}
+					}
 				}
-				bundledIn {
-					id
-				}
-				tags {
-					name
-					value
-				}
-				data {
-					size
-					type
-				}
-				quantity {
-					winston
-				}
-			}
-		}
-	}
-}`
+			}`
 	};
 }
