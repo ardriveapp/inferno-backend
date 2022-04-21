@@ -21,14 +21,12 @@ export function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
 }
 
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
-	// https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ
-	// const result = await vertoClient.getExchangeDetails('ARDRIVE');
 	const blockHeightRequest = await fetch('https://arweave.net/height');
 	const blockHeightBlob = await blockHeightRequest.blob();
 	const blockHeightText = await blockHeightBlob.text();
 	const blockHeight = +blockHeightText;
-	const result = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
-	const holders = await result.json();
+	const pstRequest = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
+	const holders = await pstRequest.json();
 	const vault = holders.state.vault;
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
 	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
