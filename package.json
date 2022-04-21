@@ -9,7 +9,7 @@
 		"email": "info@ardrive.io",
 		"website": "https://ardrive.io"
 	},
-	"license": "AGPL-3.0",
+	"license": "AGPL-3.0-or-later",
 	"scripts": {
 		"clean": "rimraf [ lib .nyc_output node_modules coverage ]",
 		"format": "prettier --write \"src/**/*.ts\"",
@@ -17,7 +17,8 @@
 		"lintfix": "eslint . --ext .ts --fix",
 		"typecheck": "tsc --noemit",
 		"build": "yarn clean && tsc --project ./tsconfig.prod.json",
-		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w"
+		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w",
+		"prepare": "husky install"
 	},
 	"devDependencies": {
 		"@types/node": "^17.0.25",
@@ -25,14 +26,20 @@
 		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.1.0",
 		"eslint-plugin-prettier": "latest",
+		"husky": "^7.0.4",
 		"lint-staged": "^11.0.0",
 		"prettier": "^2.2.1",
 		"rimraf": "^3.0.2",
 		"typescript": "^4.6.3"
 	},
-	"packageManager": "yarn@3.2.0",
 	"dependencies": {
 		"@types/node-fetch": "^2.6.1",
 		"node-fetch": "^2.6.1"
-	}
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"packageManager": "yarn@3.2.0"
 }
