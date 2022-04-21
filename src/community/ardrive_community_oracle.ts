@@ -44,11 +44,9 @@ export class ArDriveCommunityOracle {
 
 	public async getArdriveVaults(): Promise<ArdriveVaults> {
 		const contractState = (await this.contractOracle.readContract(ARDRIVE_CONTRACT_TX)) as {
-			state: { vault: { [address: string]: { start: number; end: number; balance: number }[] } };
+			vault: { [address: string]: { start: number; end: number; balance: number }[] };
 		};
-		const {
-			state: { vault }
-		} = contractState;
+		const { vault } = contractState;
 		return vault;
 	}
 }
