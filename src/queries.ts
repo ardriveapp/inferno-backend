@@ -5,6 +5,8 @@ const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
 const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync'] as const;
 
+const BLOCKS_PER_MONTH = 21600;
+
 interface Query {
 	query: string;
 }
@@ -26,15 +28,16 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	const blockHeightText = await blockHeightBlob.text();
 	const blockHeight = +blockHeightText;
 	const pstRequest = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
-	const holders = await pstRequest.json();
-	const vault = holders.state.vault;
+	const {
+		state: { vault }
+	} = await pstRequest.json();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
 	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
 		address,
 		locks.reduce((accumulator, currentValue) => {
 			const start = currentValue.start;
 			const end = currentValue.end;
-			const lockedForAtLeastAMonth = blockHeight - start >= 21600;
+			const lockedForAtLeastAMonth = blockHeight - start >= BLOCKS_PER_MONTH;
 			const isStillLocked = end >= blockHeight;
 			if (lockedForAtLeastAMonth && isStillLocked) {
 				return accumulator + currentValue.balance;
