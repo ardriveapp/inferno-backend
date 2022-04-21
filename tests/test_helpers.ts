@@ -24,7 +24,7 @@ export async function expectAsyncErrorThrow({
 	try {
 		await promiseToError;
 	} catch (err) {
-		error = err;
+		error = err as null | Error;
 	}
 
 	expect(error?.name).to.equal(errorType);
