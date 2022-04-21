@@ -1,6 +1,6 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import fetch from 'node-fetch';
-import { OutputData, Query, StakedPSTHolders } from './types';
+import { OutputData, Query, StakedPSTHolders } from './inferno_types';
 
 const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
