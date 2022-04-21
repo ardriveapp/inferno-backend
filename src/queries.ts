@@ -24,7 +24,9 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	// https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ
 	// const result = await vertoClient.getExchangeDetails('ARDRIVE');
 	const blockHeightRequest = await fetch('https://arweave.net/height');
-	const blockHeight = +(await (await blockHeightRequest.blob()).text());
+	const blockHeightBlob = await blockHeightRequest.blob();
+	const blockHeightText = await blockHeightBlob.text();
+	const blockHeight = +blockHeightText;
 	const result = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
 	const holders = await result.json();
 	const vault = holders.state.vault;
