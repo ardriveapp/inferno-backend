@@ -13,7 +13,7 @@ export interface StakedPSTHolders {
 	[address: string]: number;
 }
 
-export async function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
+export function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
 		.then((result) => Object.entries(result))
 		.then((entries) => entries.filter((data) => data[1] >= 200))
