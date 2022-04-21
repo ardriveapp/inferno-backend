@@ -1,6 +1,5 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import fetch from 'node-fetch';
-import { OutputData, Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 
 const GQL_URL = 'https://arweave.net/graphql';
@@ -9,7 +8,15 @@ const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync'] as const;
 
 const BLOCKS_PER_MONTH = 21600;
 
-export async function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
+interface Query {
+	query: string;
+}
+
+export interface StakedPSTHolders {
+	[address: string]: number;
+}
+
+export function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
 		.then((result) => Object.entries(result))
 		.then((entries) => entries.filter((data) => data[1] >= 200))
@@ -38,56 +45,6 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 		}, 0)
 	]);
 	return Object.fromEntries(stakedForAtLeastOneMonth);
-}
-
-export async function transformData(): Promise<OutputData> {
-	const data: OutputData = {
-		blockHeight: 0,
-		timestamp: Date.now(),
-		PSTHolders: {},
-		wallets: {},
-		ranks: {
-			daily: {
-				// True only when at least 50 wallets has uploaded 50 GIB
-				hasReachedMinimumGroupEffort: false,
-
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			},
-			weekly: {
-				// True only when at least 50 wallets has uploaded 50 GIB
-				hasReachedMinimumGroupEffort: false,
-
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			},
-			lastWeek: {
-				// True only when at least 50 wallets has uploaded 50 GIB
-				hasReachedMinimumGroupEffort: false,
-
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			},
-			total: {
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			}
-		}
-	};
-	throw new Error('Unimplemented!');
-	return data;
 }
 
 export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
