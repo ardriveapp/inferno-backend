@@ -85,44 +85,44 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 function createQuery(minBlock: number, maxBlock: number): Query {
 	return {
 		query: `
-query {
-	transactions(
-		block: { max: ${maxBlock}, min: ${minBlock} }
-		first: ${ITEMS_PER_REQUEST}
-		tags: [
-			{
-				name: "App-Name"
-				values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
-			}
-		]
-	) {
-		pageInfo {
-			hasNextPage
-		}
-		edges {
-			cursor
-			node {
-				id
-				owner {
-					address
+			query {
+				transactions(
+					block: { max: ${maxBlock}, min: ${minBlock} }
+					first: ${ITEMS_PER_REQUEST}
+					tags: [
+						{
+							name: "App-Name"
+							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
+						}
+					]
+				) {
+					pageInfo {
+						hasNextPage
+					}
+					edges {
+						cursor
+						node {
+							id
+							owner {
+								address
+							}
+							bundledIn {
+								id
+							}
+							tags {
+								name
+								value
+							}
+							data {
+								size
+								type
+							}
+							quantity {
+								winston
+							}
+						}
+					}
 				}
-				bundledIn {
-					id
-				}
-				tags {
-					name
-					value
-				}
-				data {
-					size
-					type
-				}
-				quantity {
-					winston
-				}
-			}
-		}
-	}
-}`
+			}`
 	};
 }
