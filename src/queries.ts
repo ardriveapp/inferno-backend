@@ -1,5 +1,6 @@
-import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
+import { GQLEdgeInterface, GQLTransactionsResultInterface } from 'ardrive-core-js';
 import fetch from 'node-fetch';
+import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 
 const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
@@ -27,10 +28,8 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	const blockHeightBlob = await blockHeightRequest.blob();
 	const blockHeightText = await blockHeightBlob.text();
 	const blockHeight = +blockHeightText;
-	const pstRequest = await fetch('https://v2.cache.verto.exchange/-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
-	const {
-		state: { vault }
-	} = await pstRequest.json();
+	const communityOracle = new ArDriveCommunityOracle();
+	const vault = await communityOracle.getArdriveVaults();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
 	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
 		address,
