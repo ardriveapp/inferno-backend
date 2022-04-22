@@ -1,9 +1,7 @@
+import { ByteCount } from 'ardrive-core-js';
+
 export interface Query {
 	query: string;
-}
-
-export interface StakedPSTHolders {
-	[address: string]: number;
 }
 
 export interface OutputData {
@@ -14,127 +12,68 @@ export interface OutputData {
 	timestamp: number;
 
 	// PST Holders' staked tokens
-	PSTHolders: { [address: string]: number };
+	PSTHolders: StakedPSTHolders;
 
 	// Per wallet stats
-	wallets: {
-		[address: string]: {
-			daily: {
-				// Total of uploaded bytes by private and public files
-				byteCount: number;
+	wallets: WaleltsStats;
 
-				// The variance of uploaded data
-				changeInPercentage: {
-					'24h': number;
-					'7d': number;
-				};
+	ranks: Ranks;
+}
 
-				// Total number of individual files uploaded
-				fileCount: number;
+export interface StakedPSTHolders {
+	[address: string]: number;
+}
 
-				// Current position in the ranking
-				rankPosition: number;
-
-				// Tokens earned
-				tokensEarned: number;
-			};
-			weekly: {
-				// Total of uploaded bytes by private and public files
-				byteCount: number;
-
-				// The variance of uploaded data
-				changeInPercentage: {
-					'24h': number;
-					'7d': number;
-				};
-
-				// Total number of individual files uploaded
-				fileCount: number;
-
-				// Current position in the ranking
-				rankPosition: number;
-
-				// Tokens earned
-				tokensEarned: number;
-			};
-			lastWeek: {
-				// Total of uploaded bytes by private and public files
-				byteCount: number;
-
-				// The variance of uploaded data
-				changeInPercentage: {
-					'24h': number;
-					'7d': number;
-				};
-
-				// Total number of individual files uploaded
-				fileCount: number;
-
-				// Current position in the ranking
-				rankPosition: number;
-
-				// Tokens earned
-				tokensEarned: number;
-			};
-			total: {
-				// Total of uploaded bytes by private and public files
-				byteCount: number;
-
-				// The variance of uploaded data
-				changeInPercentage: {
-					'24h': number;
-					'7d': number;
-				};
-
-				// Total number of individual files uploaded
-				fileCount: number;
-
-				// Current position in the ranking
-				rankPosition: number;
-
-				// Tokens earned
-				tokensEarned: number;
-			};
-		};
-	};
-
-	ranks: {
-		daily: {
-			// True only when at least 50 wallets has uploaded 50 GIB
-			hasReachedMinimumGroupEffort: boolean;
-
-			// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-			groupEffortRewards: Array<{ address: string; rewards: number }>;
-
-			// An array of addresses in streak, and the earned ARDRIVE tokens
-			streakRewards: Array<{ address: string; rewards: number }>;
-		};
-		weekly: {
-			// True only when at least 50 wallets has uploaded 50 GIB
-			hasReachedMinimumGroupEffort: boolean;
-
-			// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-			groupEffortRewards: Array<{ address: string; rewards: number }>;
-
-			// An array of addresses in streak, and the earned ARDRIVE tokens
-			streakRewards: Array<{ address: string; rewards: number }>;
-		};
-		lastWeek: {
-			// True only when at least 50 wallets has uploaded 50 GIB
-			hasReachedMinimumGroupEffort: boolean;
-
-			// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-			groupEffortRewards: Array<{ address: string; rewards: number }>;
-
-			// An array of addresses in streak, and the earned ARDRIVE tokens
-			streakRewards: Array<{ address: string; rewards: number }>;
-		};
-		total: {
-			// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-			groupEffortRewards: Array<{ address: string; rewards: number }>;
-
-			// An array of addresses in streak, and the earned ARDRIVE tokens
-			streakRewards: Array<{ address: string; rewards: number }>;
-		};
+export interface WaleltsStats {
+	[address: string]: {
+		daily: WalletStatEntry;
+		weekly: WalletStatEntry;
+		lastWeek: WalletStatEntry;
+		total: WalletStatEntry;
 	};
 }
+
+export interface WalletStatEntry {
+	// Total of uploaded bytes by private and public files
+	byteCount: ByteCount;
+
+	// The variance of uploaded data
+	changeInPercentage: number;
+
+	// Total number of individual files uploaded
+	fileCount: number;
+
+	// Current position in the ranking
+	rankPosition: number;
+
+	// Tokens earned
+	tokensEarned: number;
+}
+
+export interface Ranks {
+	daily: RankEntry;
+	weekly: RankEntry;
+	lastWeek: RankEntry;
+	total: RankEntryTotal;
+}
+
+export interface RankEntry {
+	// True only when at least 50 wallets has uploaded 50 GIB
+	hasReachedMinimumGroupEffort: boolean;
+
+	// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
+	groupEffortRewards: Rewards;
+
+	// An array of addresses in streak, and the earned ARDRIVE tokens
+	streakRewards: Rewards;
+}
+
+export interface RankEntryTotal {
+	// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
+	groupEffortRewards: Rewards;
+
+	// An array of addresses in streak, and the earned ARDRIVE tokens
+	streakRewards: Rewards;
+}
+
+export type Rewards = Array<{ address: string; rewards: number }>;
