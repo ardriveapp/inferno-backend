@@ -52,17 +52,18 @@ export class DailyOutput {
 		return JSON.parse(dataAsString);
 	}
 
-	private validateDataStructure(data: OutputData): data is OutputData {
+	private validateDataStructure(data: unknown): data is OutputData {
+		const dataAsOutputData = data as OutputData;
 		return !!(
-			data.PSTHolders &&
-			data.blockHeight &&
-			data.timestamp &&
-			data.wallets &&
-			data.ranks &&
-			data.ranks.daily &&
-			data.ranks.weekly &&
-			data.ranks.lastWeek &&
-			data.ranks.total
+			dataAsOutputData.PSTHolders &&
+			dataAsOutputData.blockHeight &&
+			dataAsOutputData.timestamp &&
+			dataAsOutputData.wallets &&
+			dataAsOutputData.ranks &&
+			dataAsOutputData.ranks.daily &&
+			dataAsOutputData.ranks.weekly &&
+			dataAsOutputData.ranks.lastWeek &&
+			dataAsOutputData.ranks.total
 		);
 	}
 }
