@@ -35,6 +35,38 @@ const mockDailyOutput = {
 // The avobe JSON stringified with tabs and a trailing new line
 const mockDailyOutputStringified = `${JSON.stringify(mockDailyOutput, null, '\t')}\n`;
 
+// a valid JSON with missing mandatory fields
+const mockMalformedDailyOutput = {
+	blockHeight: 914200,
+	timestamp: 1650043449000,
+	PSTHolders: {},
+	// wallets: {},
+	ranks: {
+		daily: {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		},
+		weekly: {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		},
+		lastWeek: {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		}
+		// total: {
+		// 	groupEffortRewards: [],
+		// 	streakRewards: []
+		// }
+	}
+};
+
+// The avobe JSON stringified with tabs and a trailing new line
+const mockMalformedDailyOutputStringified = `${JSON.stringify(mockMalformedDailyOutput, null, '\t')}\n`;
+
 describe('DailyOutput class', () => {
 	describe('read method', () => {
 		before(() => {
@@ -78,6 +110,18 @@ describe('DailyOutput class', () => {
 
 			const output = new DailyOutput();
 			expect(output.read()).to.deep.equal(mockDailyOutput);
+		});
+
+		it('throws if the file is malformed', () => {
+			const output = new DailyOutput();
+
+			// either by missing fields ...
+			writeFileSync(OUTPUT_NAME, mockMalformedDailyOutputStringified);
+			expect(output.read).to.throw();
+
+			// or by a corrupted JSON
+			writeFileSync(OUTPUT_NAME, '!{{ NOT A VALID JSON "": false');
+			expect(output.read).to.throw();
 		});
 	});
 });

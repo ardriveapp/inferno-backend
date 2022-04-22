@@ -51,6 +51,16 @@ export class DailyOutput {
 	}
 
 	private validateDataStructure(data: OutputData): boolean {
-		return !!(data.PSTHolders && data.blockHeight && data.ranks && data.timestamp && data.wallets);
+		return !!(
+			data.PSTHolders &&
+			data.blockHeight &&
+			data.timestamp &&
+			data.wallets &&
+			data.ranks &&
+			data.ranks.daily &&
+			data.ranks.weekly &&
+			data.ranks.lastWeek &&
+			data.ranks.total
+		);
 	}
 }
