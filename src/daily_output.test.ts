@@ -69,12 +69,13 @@ const mockMalformedDailyOutputStringified = `${JSON.stringify(mockMalformedDaily
 
 describe('DailyOutput class', () => {
 	describe('read method', () => {
+		const output = new DailyOutput();
+
 		before(() => {
 			rmSync(OUTPUT_NAME);
 		});
 
 		it('return the template if the file is not present', () => {
-			const output = new DailyOutput();
 			expect(output.readOutputFile).to.throw();
 			expect(output.read()).to.deep.equal({
 				blockHeight: 914117,
@@ -107,14 +108,10 @@ describe('DailyOutput class', () => {
 
 		it('return the actual file if present', () => {
 			writeFileSync(OUTPUT_NAME, mockDailyOutputStringified);
-
-			const output = new DailyOutput();
 			expect(output.read()).to.deep.equal(mockDailyOutput);
 		});
 
 		it('throws if the file is malformed', () => {
-			const output = new DailyOutput();
-
 			// either by missing fields ...
 			writeFileSync(OUTPUT_NAME, mockMalformedDailyOutputStringified);
 			expect(output.read).to.throw();
