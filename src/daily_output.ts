@@ -16,12 +16,10 @@ export class DailyOutput {
 				return this.readTemplate();
 			}
 		})();
-		const dataAsString = data.toString();
-		const dataAsJSON: OutputData = JSON.parse(dataAsString);
-		if (!this.validateDataStructure(dataAsJSON)) {
+		if (!this.validateDataStructure(data)) {
 			throw new Error(`The output JSON has a wrong structure`);
 		}
-		return dataAsJSON;
+		return data;
 	}
 
 	// write({
@@ -42,15 +40,19 @@ export class DailyOutput {
 	// 	});
 	// }
 
-	private readTemplate(): Buffer {
-		return readFileSync(OUTPUT_TEMPLATE_NAME);
+	private readTemplate(): unknown {
+		const data = readFileSync(OUTPUT_TEMPLATE_NAME);
+		const dataAsString = data.toString();
+		return JSON.parse(dataAsString);
 	}
 
-	public readOutputFile(): Buffer {
-		return readFileSync(OUTPUT_NAME);
+	public readOutputFile(): unknown {
+		const data = readFileSync(OUTPUT_NAME);
+		const dataAsString = data.toString();
+		return JSON.parse(dataAsString);
 	}
 
-	private validateDataStructure(data: OutputData): boolean {
+	private validateDataStructure(data: OutputData): data is OutputData {
 		return !!(
 			data.PSTHolders &&
 			data.blockHeight &&

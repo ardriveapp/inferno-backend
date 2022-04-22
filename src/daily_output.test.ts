@@ -111,13 +111,15 @@ describe('DailyOutput class', () => {
 			expect(output.read()).to.deep.equal(mockDailyOutput);
 		});
 
-		it('throws if the file is malformed', () => {
-			// either by missing fields ...
+		it('throws if the file has missing fields', () => {
 			writeFileSync(OUTPUT_NAME, mockMalformedDailyOutputStringified);
+			expect(output.readOutputFile).not.to.throw();
 			expect(output.read).to.throw();
+		});
 
-			// or by a corrupted JSON
+		it('throws if the file is a corrupted JSON', () => {
 			writeFileSync(OUTPUT_NAME, '!{{ NOT A VALID JSON "": false');
+			expect(output.readOutputFile).to.throw();
 			expect(output.read).to.throw();
 		});
 	});
