@@ -34,6 +34,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["@types/chai", "npm:4.3.1"],\
+            ["@types/jwk-to-pem", "npm:2.0.1"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/node-fetch", "npm:2.6.1"],\
@@ -1314,6 +1315,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-json-schema-npm-7.0.11-79462ae5ca-527bddfe62.zip/node_modules/@types/json-schema/",\
           "packageDependencies": [\
             ["@types/json-schema", "npm:7.0.11"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@types/jwk-to-pem", [\
+        ["npm:2.0.1", {\
+          "packageLocation": "./.yarn/cache/@types-jwk-to-pem-npm-2.0.1-783b4dc2e2-4fb0e1918c.zip/node_modules/@types/jwk-to-pem/",\
+          "packageDependencies": [\
+            ["@types/jwk-to-pem", "npm:2.0.1"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -4840,6 +4850,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["inferno-backend", "workspace:."],\
             ["@types/chai", "npm:4.3.1"],\
+            ["@types/jwk-to-pem", "npm:2.0.1"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/node-fetch", "npm:2.6.1"],\
