@@ -10,7 +10,7 @@ describe('The ArDriveCommunityOracle', () => {
 	};
 
 	describe('getArdriveVaults method', () => {
-		it('returns the expected arweave address', async () => {
+		it('returns the expected vault value', async () => {
 			const communityOracle = new ArDriveCommunityOracle(fakeArweave, [stubContractReader]);
 
 			expect(await communityOracle.getArdriveVaults()).to.deep.equal({
