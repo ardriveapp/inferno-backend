@@ -35,6 +35,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@types/chai", "npm:4.3.1"],\
             ["@types/jwk-to-pem", "npm:2.0.1"],\
+            ["@types/lodash", "npm:4.14.182"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/node-fetch", "npm:2.6.1"],\
@@ -50,6 +51,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:4.0.0"],\
             ["husky", "npm:7.0.4"],\
             ["lint-staged", "npm:11.2.6"],\
+            ["lodash", "npm:4.17.21"],\
             ["mocha", "npm:9.2.2"],\
             ["node-fetch", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:2.6.7"],\
             ["nyc", "npm:15.1.0"],\
@@ -1332,6 +1334,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@types/keyv", "npm:3.1.4"],\
             ["@types/node", "npm:17.0.25"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@types/lodash", [\
+        ["npm:4.14.182", {\
+          "packageLocation": "./.yarn/cache/@types-lodash-npm-4.14.182-1073aac722-7dd137aa9d.zip/node_modules/@types/lodash/",\
+          "packageDependencies": [\
+            ["@types/lodash", "npm:4.14.182"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -4849,6 +4860,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["inferno-backend", "workspace:."],\
             ["@types/chai", "npm:4.3.1"],\
             ["@types/jwk-to-pem", "npm:2.0.1"],\
+            ["@types/lodash", "npm:4.14.182"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/node-fetch", "npm:2.6.1"],\
@@ -4864,6 +4876,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:4.0.0"],\
             ["husky", "npm:7.0.4"],\
             ["lint-staged", "npm:11.2.6"],\
+            ["lodash", "npm:4.17.21"],\
             ["mocha", "npm:9.2.2"],\
             ["node-fetch", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:2.6.7"],\
             ["nyc", "npm:15.1.0"],\

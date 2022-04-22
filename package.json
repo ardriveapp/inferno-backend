@@ -16,6 +16,7 @@
 		"lint": "eslint . --ext .ts",
 		"lintfix": "eslint . --ext .ts --fix",
 		"typecheck": "tsc --noemit",
+		"test": "nyc mocha",
 		"build": "yarn clean && tsc --project ./tsconfig.prod.json",
 		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w",
 		"prepare": "husky install"
@@ -23,6 +24,7 @@
 	"devDependencies": {
 		"@types/chai": "^4",
 		"@types/jwk-to-pem": "^2.0.1",
+		"@types/lodash": "^4",
 		"@types/mocha": "^9.1.1",
 		"@types/node": "^17.0.25",
 		"@types/node-fetch": "^2.6.1",
@@ -47,6 +49,7 @@
 	"dependencies": {
 		"ardrive-core-js": "^1.12.0",
 		"arweave": "1.10.18",
+		"lodash": "^4.17.21",
 		"node-fetch": "^2.6.1"
 	},
 	"husky": {
