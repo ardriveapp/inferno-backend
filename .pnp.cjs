@@ -44,7 +44,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["ardrive-core-js", "npm:1.12.0"],\
             ["arweave", "npm:1.10.18"],\
-            ["axios", "npm:0.26.1"],\
             ["chai", "npm:4.3.6"],\
             ["eslint", "npm:8.13.0"],\
             ["eslint-config-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:8.5.0"],\
@@ -57,7 +56,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["prettier", "npm:2.6.2"],\
             ["rimraf", "npm:3.0.2"],\
             ["sinon", "npm:13.0.2"],\
-            ["smartweave", "npm:0.4.48"],\
             ["ts-node", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:10.7.0"],\
             ["typescript", "patch:typescript@npm%3A4.6.3#~builtin<compat/typescript>::version=4.6.3&hash=bda367"]\
           ],\
@@ -4860,7 +4858,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["ardrive-core-js", "npm:1.12.0"],\
             ["arweave", "npm:1.10.18"],\
-            ["axios", "npm:0.26.1"],\
             ["chai", "npm:4.3.6"],\
             ["eslint", "npm:8.13.0"],\
             ["eslint-config-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:8.5.0"],\
@@ -4873,7 +4870,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["prettier", "npm:2.6.2"],\
             ["rimraf", "npm:3.0.2"],\
             ["sinon", "npm:13.0.2"],\
-            ["smartweave", "npm:0.4.48"],\
             ["ts-node", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:10.7.0"],\
             ["typescript", "patch:typescript@npm%3A4.6.3#~builtin<compat/typescript>::version=4.6.3&hash=bda367"]\
           ],\
