@@ -18,6 +18,10 @@
 			"hasReachedMinimumGroupEffort": false,
 			"groupEffortRewards": [],
 			"streakRewards": []
+		},
+		"total": {
+			"groupEffortRewards": [],
+			"streakRewards": []
 		}
 	}
 }
