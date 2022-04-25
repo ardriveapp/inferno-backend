@@ -1,5 +1,3 @@
-import { ByteCount } from 'ardrive-core-js';
-
 export interface Query {
 	query: string;
 }
@@ -35,7 +33,7 @@ export interface WaleltsStats {
 
 export interface WalletStatEntry {
 	// Total of uploaded bytes by private and public files
-	byteCount: ByteCount;
+	byteCount: number;
 
 	// The variance of uploaded data
 	changeInPercentage: number;

@@ -1,6 +1,6 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from 'ardrive-core-js';
 import fetch from 'node-fetch';
-import { OutputData, Query, StakedPSTHolders } from './inferno_types';
+import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 
 const GQL_URL = 'https://arweave.net/graphql';
@@ -40,59 +40,14 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	return Object.fromEntries(stakedForAtLeastOneMonth);
 }
 
-export async function transformData(): Promise<OutputData> {
-	const data: OutputData = {
-		blockHeight: 0,
-		timestamp: Date.now(),
-		PSTHolders: {},
-		wallets: {},
-		ranks: {
-			daily: {
-				// True only when at least 50 wallets has uploaded 50 GIB
-				hasReachedMinimumGroupEffort: false,
-
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			},
-			weekly: {
-				// True only when at least 50 wallets has uploaded 50 GIB
-				hasReachedMinimumGroupEffort: false,
-
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			},
-			lastWeek: {
-				// True only when at least 50 wallets has uploaded 50 GIB
-				hasReachedMinimumGroupEffort: false,
-
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			},
-			total: {
-				// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
-				groupEffortRewards: [],
-
-				// An array of addresses in streak, and the earned ARDRIVE tokens
-				streakRewards: []
-			}
-		}
-	};
-	throw new Error('Unimplemented!');
-	return data;
-}
-
 export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
 	const allEdges: GQLEdgeInterface[] = [];
 	let hasNextPage = true;
+
+	const blockHeightRequest = await fetch('https://arweave.net/height');
+	const blockHeightBlob = await blockHeightRequest.blob();
+	const blockHeightText = await blockHeightBlob.text();
+	const blockHeight = +blockHeightText;
 
 	while (hasNextPage) {
 		const query = createQuery(minBlock, maxBlock);
@@ -101,7 +56,10 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 		hasNextPage = response.pageInfo.hasNextPage;
 	}
 
-	return allEdges;
+	return allEdges.filter((edge) => {
+		// do not consider the latest 50 blocks
+		edge.node.block.height < blockHeight - 50;
+	});
 }
 
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
@@ -164,6 +122,9 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							}
 							quantity {
 								winston
+							}
+							block {
+								timestamp
 							}
 						}
 					}
