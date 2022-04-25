@@ -101,6 +101,7 @@ export class DailyOutput {
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
+		// calculate rewards
 		if (hasReachedMinimumGroupEffort) {
 			const ties = groupEffortParticipants.reduce((accumulator, address) => {
 				const clone = Object.assign({}, accumulator);
@@ -130,11 +131,6 @@ export class DailyOutput {
 			shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
 
 			const top50 = shuffledTies.slice(0, 49);
-
-			if (top50.length !== 50) {
-				// TODO: remove
-				throw new Error('FIXME');
-			}
 
 			this.data.ranks.daily.groupEffortRewards = top50.map((address, index) => {
 				return { address, rewards: GROUP_EFFORT_REWARDS[index] };

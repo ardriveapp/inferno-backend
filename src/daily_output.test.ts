@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { rmSync, writeFileSync } from 'fs';
+import Sinon from 'sinon';
 import { OUTPUT_NAME } from './constants';
 import { DailyOutput } from './daily_output';
 
@@ -121,6 +122,49 @@ describe('DailyOutput class', () => {
 			writeFileSync(OUTPUT_NAME, '!{{ NOT A VALID JSON "": false');
 			expect(output.readOutputFile).to.throw();
 			expect(output.read).to.throw();
+		});
+	});
+
+	describe('feedGQLData method', () => {
+		before(() => {
+			Sinon.stub(output, 'read').returns(mockDailyOutput);
+		});
+
+		it('Throws if the previous block height is ahead of some query result', () => {
+			expect(() =>
+				output.feedGQLData([
+					{
+						cursor: '914100',
+						node: {
+							block: { height: 914200, id: '', timestamp: 0, previous: '' },
+							id: '',
+							anchor: '',
+							signature: '',
+							recipient: '',
+							data: {
+								size: 0,
+								type: ''
+							},
+							tags: [],
+							parent: {
+								id: ''
+							},
+							fee: {
+								ar: '0',
+								winston: '0'
+							},
+							quantity: {
+								ar: '0',
+								winston: '0'
+							},
+							owner: {
+								address: '',
+								key: ''
+							}
+						}
+					}
+				])
+			).to.throw(undefined, 'That block was already processed!');
 		});
 	});
 });
