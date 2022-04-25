@@ -25,6 +25,7 @@ export interface StakedPSTHolders {
 export interface WaleltsStats {
 	[address: string]: {
 		daily: WalletStatEntry;
+		yesterday: WalletStatEntry;
 		weekly: WalletStatEntry;
 		lastWeek: WalletStatEntry;
 		total: WalletStatEntry;

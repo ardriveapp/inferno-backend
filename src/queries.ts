@@ -49,17 +49,16 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 	const blockHeightText = await blockHeightBlob.text();
 	const blockHeight = +blockHeightText;
 
+	const trustedHeight = blockHeight - 50;
+
 	while (hasNextPage) {
-		const query = createQuery(minBlock, maxBlock);
+		const query = createQuery(minBlock, Math.min(maxBlock, trustedHeight));
 		const response = await sendQuery(query);
 		allEdges.push(...response.edges);
 		hasNextPage = response.pageInfo.hasNextPage;
 	}
 
-	return allEdges.filter((edge) => {
-		// do not consider the latest 50 blocks
-		edge.node.block.height < blockHeight - 50;
-	});
+	return allEdges;
 }
 
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
@@ -125,6 +124,7 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							}
 							block {
 								timestamp
+								height
 							}
 						}
 					}

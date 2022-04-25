@@ -1,6 +1,6 @@
 import { GQLEdgeInterface } from 'ardrive-core-js';
-import { readFileSync } from 'fs';
-import { OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
+import { readFileSync, writeFileSync } from 'fs';
+import { GROUP_EFFORT_REWARDS, ONE_GiB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
 import { OutputData, StakedPSTHolders } from './inferno_types';
 
 export class DailyOutput {
@@ -42,7 +42,15 @@ export class DailyOutput {
 	feedGQLData(queryResult: GQLEdgeInterface[]): void {
 		const previousData = this.read();
 		const previousTimestamp = previousData.timestamp;
+		const previousBlockHeight = previousData.blockHeight;
 		const previousDate = new Date(previousTimestamp);
+
+		const firstQueryResult = queryResult[0];
+		const firstBlockHeight = firstQueryResult.node.block.height;
+
+		if (previousBlockHeight >= firstBlockHeight) {
+			throw new Error('That block was already processed!');
+		}
 
 		const latestQueryResult = queryResult[queryResult.length - 1];
 		const queryTimestamp = latestQueryResult.node.block.timestamp;
@@ -68,13 +76,76 @@ export class DailyOutput {
 		this.data.blockHeight = this.latestBlock;
 		this.data.timestamp = this.latestTimestamp;
 
-		// TODO: calculate change in percentage
-		// TODO: calculate rewards
+		// sort addresses by ranking
+		const addresses = Object.keys(this.data.wallets);
+		const groupEffortRankings = addresses.sort((a, b) => {
+			// FIXME: randomize ties
+			const uploadedData_a = this.data.wallets[a].daily.byteCount;
+			const uploadedData_b = this.data.wallets[b].daily.byteCount;
+			return uploadedData_a - uploadedData_b;
+		});
+
+		// calculate change in percentage of the uploaded data and rank position
+		groupEffortRankings.forEach((address) => {
+			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
+			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
+			const changeInPercentage = ((uploadedDataToday - uploadedDataYesterday) / uploadedDataToday) * 100;
+			this.data.wallets[address].daily.changeInPercentage = changeInPercentage;
+		});
+
+		// check if the minimum group effor was reached
+		const groupEffortParticipants = groupEffortRankings.filter(
+			(address) => this.data.wallets[address].weekly.byteCount >= ONE_GiB
+		);
+		const hasReachedMinimumGroupEffort = groupEffortParticipants.length >= 50;
+		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
+		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
+
+		if (hasReachedMinimumGroupEffort) {
+			const ties = groupEffortParticipants.reduce((accumulator, address) => {
+				const clone = Object.assign({}, accumulator);
+				const byteCount = this.data.wallets[address].weekly.byteCount;
+				if (!clone[byteCount]) {
+					clone[byteCount] = [address];
+				} else {
+					clone[byteCount].push(address);
+				}
+				return clone;
+			}, {} as { [byteCount: number]: string[] });
+
+			const shuffledTies = Object.keys(ties)
+				.map((byteCount) => {
+					const tie = ties[+byteCount];
+					return tie
+						.map((value) => ({ value, sort: Math.random() }))
+						.sort((a, b) => a.sort - b.sort)
+						.map(({ value }) => value);
+				})
+				.reduce((accumulator, tie) => {
+					const clone = accumulator.slice();
+					clone.push(...tie);
+					return clone;
+				}, []);
+
+			shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
+
+			const top50 = shuffledTies.slice(0, 49);
+
+			if (top50.length !== 50) {
+				// TODO: remove
+				throw new Error('FIXME');
+			}
+
+			this.data.ranks.daily.groupEffortRewards = top50.map((address, index) => {
+				return { address, rewards: GROUP_EFFORT_REWARDS[index] };
+			});
+		}
 	}
 
 	private resetDay(): void {
 		const addresses = Object.keys(this.data.wallets);
 		for (const address in addresses) {
+			this.data.wallets[address].yesterday = this.data.wallets[address].daily;
 			this.data.wallets[address].daily = {
 				byteCount: 0,
 				changeInPercentage: 0,
@@ -175,6 +246,13 @@ export class DailyOutput {
 					rankPosition: 0,
 					tokensEarned: 0
 				},
+				yesterday: {
+					fileCount: 0,
+					byteCount: 0,
+					changeInPercentage: 0,
+					rankPosition: 0,
+					tokensEarned: 0
+				},
 				weekly: {
 					fileCount: 0,
 					byteCount: 0,
@@ -202,7 +280,11 @@ export class DailyOutput {
 
 	write(): void {
 		// TODO
-		console.log('TODO: write this JSON', JSON.stringify(this.data, null, 4));
+		// console.log('TODO: write this JSON', JSON.stringify(this.data, null, 4));
+		if (!this.validateDataStructure(this.data)) {
+			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
+		}
+		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
 	}
 
 	private readTemplate(): unknown {
