@@ -136,7 +136,7 @@ describe('DailyOutput class', () => {
 					{
 						cursor: '914100',
 						node: {
-							block: { height: 914200, id: '', timestamp: 0, previous: '' },
+							block: { height: 914100, id: '', timestamp: 0, previous: '' },
 							id: '',
 							anchor: '',
 							signature: '',

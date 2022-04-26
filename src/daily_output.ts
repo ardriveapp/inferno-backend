@@ -17,7 +17,7 @@ export class DailyOutput {
 			try {
 				return this.readOutputFile();
 			} catch (err) {
-				console.log(`The output file hasn't yet been created. Using the file template`);
+				console.info(`The output file hasn't yet been created. Using the file template`);
 				return this.readTemplate();
 			}
 		})();
@@ -101,7 +101,7 @@ export class DailyOutput {
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
-		// calculate rewards
+		// compute group effort rewards
 		if (hasReachedMinimumGroupEffort) {
 			const ties = groupEffortParticipants.reduce((accumulator, address) => {
 				const clone = Object.assign({}, accumulator);
@@ -136,6 +136,10 @@ export class DailyOutput {
 				return { address, rewards: GROUP_EFFORT_REWARDS[index] };
 			});
 		}
+
+		// compute streak rewards
+		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
+		// TODO: determine if the wallets has uploaded data for 7 days in a row
 	}
 
 	private resetDay(): void {
@@ -275,12 +279,11 @@ export class DailyOutput {
 	}
 
 	write(): void {
-		// TODO
-		// console.log('TODO: write this JSON', JSON.stringify(this.data, null, 4));
 		if (!this.validateDataStructure(this.data)) {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
 		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
+		console.log(`Output saved at ${OUTPUT_NAME}`);
 	}
 
 	private readTemplate(): unknown {
