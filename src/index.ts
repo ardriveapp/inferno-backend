@@ -4,11 +4,19 @@ import { hideBin } from 'yargs/helpers';
 import { DailyOutput } from './daily_output';
 import { getAllTransactionsWithin, getWalletsEligibleForStreak } from './queries';
 
-// 🐍🐍🐍
+/**
+ * A Python-like approach to determine if the JS code is running this exact module, and not being imported
+ * 🐍🐍🐍
+ */
 if (require.main === module) {
 	run();
+} else {
+	throw new Error('This module should not be imported');
 }
 
+/**
+ * The main method. It handles the CLI commands and parameters
+ */
 function run(): void {
 	yargs(hideBin(process.argv)).command(
 		'aggregate [minBlock] [maxBlock]',
@@ -35,6 +43,11 @@ function run(): void {
 	yargs.parse();
 }
 
+/**
+ * The method that runs the data aggregation algorithm
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ */
 async function aggregateOutputData(minBlock: number, maxBlock: number): Promise<void> {
 	const output = new DailyOutput();
 	const PSTHolders = await getWalletsEligibleForStreak();

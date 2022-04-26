@@ -6,6 +6,10 @@ import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, VALID_APP_NAMES } from '.
 import { writeFileSync } from 'fs';
 import { getBlockHeight, gqlResultName } from './common';
 
+/**
+ * Filters the result of getStakedPSTHolders in order to get the holders that staked at least ↁ200
+ * @returns {Promise<StakedPSTHolders>}
+ */
 export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
 		.then((result) => Object.entries(result))
@@ -13,6 +17,10 @@ export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
 		.then((entries) => Object.fromEntries(entries));
 }
 
+/**
+ * Queries for all PST holders that staked tokens for at least 21600 blocks
+ * @returns {Promise<StakedPSTHolders>}
+ */
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	const blockHeight = await getBlockHeight();
 	const communityOracle = new ArDriveCommunityOracle();
@@ -34,6 +42,12 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	return Object.fromEntries(stakedForAtLeastOneMonth);
 }
 
+/**
+ * Queries GQL for all ArDrive transactions within a range of blocks
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
+ */
 export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
 	const allEdges: GQLEdgeInterface[] = [];
 
@@ -57,6 +71,12 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 	return allEdges;
 }
 
+/**
+ * Runs the given GQL query
+ * @param query the query object
+ * @throws if the GW returns a syntax error
+ * @returns {GQLTransactionsResultInterface} the returned transactions
+ */
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
 	// TODO: implement retry here
 	const response = await fetch(GQL_URL, {
@@ -80,6 +100,12 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 	return JSONBody.data.transactions as GQLTransactionsResultInterface;
 }
 
+/**
+ * Returns a query object to math all ArDrive transactions within a range of blocks
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ * @returns
+ */
 function createQuery(minBlock: number, maxBlock: number): Query {
 	return {
 		query: `

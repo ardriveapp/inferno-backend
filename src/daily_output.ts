@@ -3,6 +3,9 @@ import { readFileSync, writeFileSync } from 'fs';
 import { GROUP_EFFORT_REWARDS, ONE_GiB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
 import { OutputData, StakedPSTHolders } from './inferno_types';
 
+/**
+ * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
+ */
 export class DailyOutput {
 	private data = this.read();
 	private latestBlock = 0;
@@ -10,7 +13,8 @@ export class DailyOutput {
 	private bundlesTips: { [address: string]: boolean } = {};
 
 	/**
-	 * takes the data from the previously generated data, fallbacking to the base template if not present
+	 * Takes the data from the previously generated data, fallbacking to the base template if not present
+	 * @throws if the validation of the output file fails
 	 * @retuns {OutputData}
 	 */
 	public read(): OutputData {
@@ -29,7 +33,6 @@ export class DailyOutput {
 	}
 
 	/**
-	 *
 	 * @param {StakedPSTHolders} stakedPSTHolders key/value of address/tokens above 200 ARDRIVE locked for at least 21600 blocks (~30 days)
 	 */
 	feedPSTHolders(stakedPSTHolders: StakedPSTHolders): void {
@@ -37,7 +40,6 @@ export class DailyOutput {
 	}
 
 	/**
-	 *
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
 	feedGQLData(queryResult: GQLEdgeInterface[]): void {
@@ -73,6 +75,14 @@ export class DailyOutput {
 		this.finishDataAggregation();
 	}
 
+	/**
+	 * From the fed data, derivate:
+	 * - the ranking,
+	 * - the change in percentage of the upload voume,
+	 * - wether or not the group effort reached the minimum requirements,
+	 * - group effort rewards, and
+	 * - streak rewards
+	 */
 	private finishDataAggregation(): void {
 		this.data.blockHeight = this.latestBlock;
 		this.data.timestamp = this.latestTimestamp;
@@ -142,6 +152,9 @@ export class DailyOutput {
 		// TODO: determine if the wallets has uploaded data for 7 days in a row
 	}
 
+	/**
+	 * Will copy the data of today into yesterday's and clear the today's data
+	 */
 	private resetDay(): void {
 		const addresses = Object.keys(this.data.wallets);
 		for (const address in addresses) {
@@ -161,6 +174,9 @@ export class DailyOutput {
 		}
 	}
 
+	/**
+	 * Will copy the data of the current week into the past one and clear the data of the current week
+	 */
 	private resetWeek(): void {
 		const addresses = Object.keys(this.data.wallets);
 		for (const address in addresses) {
@@ -181,7 +197,12 @@ export class DailyOutput {
 		}
 	}
 
-	private aggregateData = (edge: GQLEdgeInterface) => {
+	/**
+	 * Aggregates one single GQL result
+	 * @param edge the edge result of the query
+	 * @throws if there's a bundled transaction with no bundle
+	 */
+	private aggregateData = (edge: GQLEdgeInterface): void => {
 		const node = edge.node;
 		const txId = node.id;
 		const ownerAddress = node.owner.address;
@@ -214,7 +235,7 @@ export class DailyOutput {
 				const isBundledTransaction = !!bundledIn;
 				if (isBundledTransaction) {
 					const isTipPresent = this.bundlesTips[bundledIn];
-					if (isTipPresent == undefined) {
+					if (isTipPresent === undefined) {
 						throw new Error("Bundle transaction wasn't read. Cannot calculate tip");
 					}
 					if (!isTipPresent) {
@@ -235,6 +256,10 @@ export class DailyOutput {
 		this.latestTimestamp = Math.max(this.latestTimestamp, node.block.timestamp);
 	};
 
+	/**
+	 * Adds +1 to the file count
+	 * @param address the address of the owner wallet of the transaction
+	 */
 	private sumFile(address: string): void {
 		this.setupWallet(address);
 		this.data.wallets[address].daily.fileCount++;
@@ -242,6 +267,11 @@ export class DailyOutput {
 		this.data.wallets[address].total.fileCount++;
 	}
 
+	/**
+	 * Sums up the size in bytes of the file
+	 * @param address the address of the owner wallet of the transaction
+	 * @param size the data size of the file data transaction
+	 */
 	private sumSize(address: string, size: number): void {
 		this.setupWallet(address);
 		this.data.wallets[address].daily.byteCount += size;
@@ -249,6 +279,10 @@ export class DailyOutput {
 		this.data.wallets[address].total.byteCount += size;
 	}
 
+	/**
+	 * Will fill the data of a wallet if no present
+	 * @param address the address of whom to fill the data
+	 */
 	private setupWallet(address: string): void {
 		if (!this.data.wallets[address]) {
 			this.data.wallets[address] = {
@@ -291,7 +325,11 @@ export class DailyOutput {
 		}
 	}
 
-	write(): void {
+	/**
+	 * Stores the JSON output of the class instance
+	 * @throws if the JSON data is invalid
+	 */
+	public write(): void {
 		if (!this.validateDataStructure(this.data)) {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
@@ -299,18 +337,29 @@ export class DailyOutput {
 		console.log(`Output saved at ${OUTPUT_NAME}`);
 	}
 
+	/**
+	 * @returns the content of the JSON template file
+	 */
 	private readTemplate(): unknown {
 		const data = readFileSync(OUTPUT_TEMPLATE_NAME);
 		const dataAsString = data.toString();
 		return JSON.parse(dataAsString);
 	}
 
+	/**
+	 * @returns the content of the JSON output file
+	 */
 	public readOutputFile(): unknown {
 		const data = readFileSync(OUTPUT_NAME);
 		const dataAsString = data.toString();
 		return JSON.parse(dataAsString);
 	}
 
+	/**
+	 * Validates certain object to match the schema of the OutputData
+	 * @param data a JSON object
+	 * @returns true if the data is OutputData
+	 */
 	private validateDataStructure(data: unknown): data is OutputData {
 		const dataAsOutputData = data as OutputData;
 		return !!(
