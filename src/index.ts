@@ -18,16 +18,15 @@ function run(): void {
 					describe: 'The block from where to start the query',
 					type: 'number'
 				})
+				.demandOption('minBlock')
 				.positional('maxBlock', {
 					describe: 'The last block to query',
 					type: 'number'
-				});
+				})
+				.demandOption('maxBlock');
 		},
 		(argv) => {
 			const { minBlock, maxBlock } = argv;
-			if (!(minBlock && maxBlock)) {
-				throw new Error('You must specify the min and max block height to query');
-			}
 			aggregateOutputData(minBlock, maxBlock);
 		}
 	);
