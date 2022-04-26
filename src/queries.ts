@@ -3,6 +3,8 @@ import fetch from 'node-fetch';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, VALID_APP_NAMES } from './constants';
+import { writeFileSync } from 'fs';
+import { getBlockHeight, gqlResultName } from './common';
 
 export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
@@ -12,10 +14,7 @@ export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
 }
 
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
-	const blockHeightRequest = await fetch('https://arweave.net/height');
-	const blockHeightBlob = await blockHeightRequest.blob();
-	const blockHeightText = await blockHeightBlob.text();
-	const blockHeight = +blockHeightText;
+	const blockHeight = await getBlockHeight();
 	const communityOracle = new ArDriveCommunityOracle();
 	const vault = await communityOracle.getArdriveVaults();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
@@ -37,18 +36,20 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 
 export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
 	const allEdges: GQLEdgeInterface[] = [];
-	let hasNextPage = true;
 
-	const blockHeightRequest = await fetch('https://arweave.net/height');
-	const blockHeightBlob = await blockHeightRequest.blob();
-	const blockHeightText = await blockHeightBlob.text();
-	const blockHeight = +blockHeightText;
-
+	const blockHeight = await getBlockHeight();
 	const trustedHeight = blockHeight - 50;
 
+	let hasNextPage = true;
+	let prevBlock = minBlock - 1;
+
 	while (hasNextPage) {
-		const query = createQuery(minBlock, Math.min(maxBlock, trustedHeight));
+		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight));
 		const response = await sendQuery(query);
+		const mostRecientTransaction = response.edges[response.edges.length - 1];
+		const cursor = +mostRecientTransaction.cursor;
+		writeFileSync(gqlResultName(prevBlock + 1, cursor), JSON.stringify(response.edges));
+		prevBlock = cursor;
 		allEdges.push(...response.edges);
 		hasNextPage = response.pageInfo.hasNextPage;
 	}
