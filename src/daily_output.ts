@@ -7,6 +7,7 @@ export class DailyOutput {
 	private data = this.read();
 	private latestBlock = 0;
 	private latestTimestamp = 0;
+	private bundlesTips: { [address: string]: boolean } = {};
 
 	/**
 	 * takes the data from the previously generated data, fallbacking to the base template if not present
@@ -183,20 +184,25 @@ export class DailyOutput {
 
 	private aggregateData = (edge: GQLEdgeInterface) => {
 		const node = edge.node;
+		const txId = node.id;
 		const ownerAddress = node.owner.address;
+		const tip = +node.quantity.winston;
 		const tags = node.tags;
-		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type');
-		const bundledIn = tags.find((tag) => tag.name === 'Bundled-In');
-		const isMetadataTransaction = !!entityTypeTag;
+		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
+		const bundledIn = tags.find((tag) => tag.name === 'Bundled-In')?.value;
+		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
+		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
+		const isBundleTransaction = !!bundleVersion;
 
 		if (isMetadataTransaction) {
-			const isFileMetadata = entityTypeTag.value === 'file';
+			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
 				this.sumFile(ownerAddress);
 			}
+		} else if (isBundleTransaction) {
+			this.bundlesTips[txId] = !!tip;
 		} else {
 			// is file data transaction
-			const tip = +node.quantity.winston;
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -208,10 +214,18 @@ export class DailyOutput {
 
 				const isBundledTransaction = !!bundledIn;
 				if (isBundledTransaction) {
-					// TODO: check for bundle tip
+					const isTipPresent = this.bundlesTips[bundledIn];
+					if (isTipPresent == undefined) {
+						throw new Error("Bundle transaction wasn't read. Cannot calculate tip");
+					}
+					if (!isTipPresent) {
+						// Discard bundled transactions without a tip
+						return;
+					}
+				} else {
+					// Discards V2 transactions without a tip
+					return;
 				}
-				// Discards V2 transactions without a tip
-				return;
 			}
 
 			const dataSize = +node.data.size;
