@@ -9,7 +9,7 @@ const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync'] as const;
 
 const BLOCKS_PER_MONTH = 21600;
 
-export async function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
+export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
 		.then((result) => Object.entries(result))
 		.then((entries) => entries.filter((data) => data[1] >= 200))
