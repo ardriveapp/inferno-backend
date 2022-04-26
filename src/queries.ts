@@ -5,7 +5,7 @@ import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 
 const GQL_URL = 'https://arweave.net/graphql';
 const ITEMS_PER_REQUEST = 100;
-const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync'] as const;
+const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'] as const;
 
 const BLOCKS_PER_MONTH = 21600;
 
