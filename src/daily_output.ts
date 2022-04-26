@@ -80,7 +80,6 @@ export class DailyOutput {
 		// sort addresses by ranking
 		const addresses = Object.keys(this.data.wallets);
 		const groupEffortRankings = addresses.sort((a, b) => {
-			// FIXME: randomize ties
 			const uploadedData_a = this.data.wallets[a].daily.byteCount;
 			const uploadedData_b = this.data.wallets[b].daily.byteCount;
 			return uploadedData_a - uploadedData_b;
@@ -94,7 +93,7 @@ export class DailyOutput {
 			this.data.wallets[address].daily.changeInPercentage = changeInPercentage;
 		});
 
-		// check if the minimum group effor was reached
+		// check if the minimum group effort was reached
 		const groupEffortParticipants = groupEffortRankings.filter(
 			(address) => this.data.wallets[address].weekly.byteCount >= ONE_GiB
 		);

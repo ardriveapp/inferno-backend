@@ -4,6 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { DailyOutput } from './daily_output';
 import { getAllTransactionsWithin, getWalletsEligibleForStreak } from './queries';
 
+// 🐍🐍🐍
 if (require.main === module) {
 	run();
 }
