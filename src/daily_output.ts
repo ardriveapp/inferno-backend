@@ -1,7 +1,7 @@
 import { GQLEdgeInterface } from 'ardrive-core-js';
 import { readFileSync, writeFileSync } from 'fs';
 import { GROUP_EFFORT_REWARDS, ONE_THOUSAND_MB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
-import { OutputData, StakedPSTHolders } from './inferno_types';
+import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
@@ -366,12 +366,41 @@ export class DailyOutput {
 			dataAsOutputData.PSTHolders &&
 			dataAsOutputData.blockHeight &&
 			dataAsOutputData.timestamp &&
-			dataAsOutputData.wallets &&
+			this.validateWalletsStructure(dataAsOutputData.wallets) &&
 			dataAsOutputData.ranks &&
 			dataAsOutputData.ranks.daily &&
 			dataAsOutputData.ranks.weekly &&
 			dataAsOutputData.ranks.lastWeek &&
 			dataAsOutputData.ranks.total
+		);
+	}
+
+	private validateWalletsStructure(wallets: unknown): wallets is WalletsStats {
+		const walletsAsWalletsStats = wallets as WalletsStats;
+		const walletsInGoodShape =
+			walletsAsWalletsStats &&
+			Object.keys(walletsAsWalletsStats).reduce((isInGoodShape, address) => {
+				const walletData = walletsAsWalletsStats[address];
+				const currentWalletInGoodShape =
+					this.validateWalletStatStructure(walletData.daily) &&
+					this.validateWalletStatStructure(walletData.yesterday) &&
+					this.validateWalletStatStructure(walletData.weekly) &&
+					this.validateWalletStatStructure(walletData.lastWeek) &&
+					this.validateWalletStatStructure(walletData.total);
+				return isInGoodShape && currentWalletInGoodShape;
+			}, true);
+		return walletsInGoodShape;
+	}
+
+	private validateWalletStatStructure(data: unknown): data is WalletStatEntry {
+		const walletStat = data as WalletStatEntry;
+		return (
+			walletStat &&
+			Number.isInteger(walletStat.byteCount) &&
+			typeof walletStat.changeInPercentage === 'number' &&
+			Number.isInteger(walletStat.fileCount) &&
+			Number.isInteger(walletStat.rankPosition) &&
+			Number.isInteger(walletStat.tokensEarned)
 		);
 	}
 }

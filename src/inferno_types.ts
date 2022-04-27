@@ -13,7 +13,7 @@ export interface OutputData {
 	PSTHolders: StakedPSTHolders;
 
 	// Per wallet stats
-	wallets: WaleltsStats;
+	wallets: WalletsStats;
 
 	ranks: Ranks;
 }
@@ -22,7 +22,7 @@ export interface StakedPSTHolders {
 	[address: string]: number;
 }
 
-export interface WaleltsStats {
+export interface WalletsStats {
 	[address: string]: {
 		daily: WalletStatEntry;
 		yesterday: WalletStatEntry;
