@@ -1,6 +1,6 @@
 import { GQLEdgeInterface } from 'ardrive-core-js';
 import { readFileSync, writeFileSync } from 'fs';
-import { GROUP_EFFORT_REWARDS, ONE_GiB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
+import { GROUP_EFFORT_REWARDS, ONE_THOUSAND_MB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
 import { OutputData, StakedPSTHolders } from './inferno_types';
 
 /**
@@ -105,7 +105,7 @@ export class DailyOutput {
 
 		// check if the minimum group effort was reached
 		const groupEffortParticipants = groupEffortRankings.filter(
-			(address) => this.data.wallets[address].weekly.byteCount >= ONE_GiB
+			(address) => this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB
 		);
 		const hasReachedMinimumGroupEffort = groupEffortParticipants.length >= 50;
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
