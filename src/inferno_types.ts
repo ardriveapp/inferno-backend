@@ -47,6 +47,12 @@ export interface WalletStatEntry {
 
 	// Tokens earned
 	tokensEarned: number;
+
+	// Total tips sent to valid PST holders
+	tips: number;
+
+	// Block height since when the wallet is participating
+	blockSinceParticipating?: number;
 }
 
 export interface Ranks {

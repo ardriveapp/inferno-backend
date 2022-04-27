@@ -10,7 +10,7 @@ export class DailyOutput {
 	private data = this.read();
 	private latestBlock = 0;
 	private latestTimestamp = 0;
-	private bundlesTips: { [address: string]: boolean } = {};
+	private bundlesTips: { [address: string]: number } = {};
 
 	/**
 	 * Takes the data from the previously generated data, fallbacking to the base template if not present
@@ -164,7 +164,8 @@ export class DailyOutput {
 				changeInPercentage: 0,
 				fileCount: 0,
 				rankPosition: 0,
-				tokensEarned: 0
+				tokensEarned: 0,
+				tips: 0
 			};
 			this.data.ranks.daily = {
 				hasReachedMinimumGroupEffort: false,
@@ -186,7 +187,8 @@ export class DailyOutput {
 				changeInPercentage: 0,
 				fileCount: 0,
 				rankPosition: 0,
-				tokensEarned: 0
+				tokensEarned: 0,
+				tips: 0
 			};
 			this.data.ranks.lastWeek = this.data.ranks.weekly;
 			this.data.ranks.weekly = {
@@ -206,7 +208,7 @@ export class DailyOutput {
 		const node = edge.node;
 		const txId = node.id;
 		const ownerAddress = node.owner.address;
-		const tip = +node.quantity.winston;
+		let tip = +node.quantity.winston;
 		const tags = node.tags;
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundledIn = tags.find((tag) => tag.name === 'Bundled-In')?.value;
@@ -220,7 +222,7 @@ export class DailyOutput {
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			this.bundlesTips[txId] = !!tip;
+			this.bundlesTips[txId] = tip;
 		} else {
 			// is file data transaction
 
@@ -242,6 +244,7 @@ export class DailyOutput {
 						// Discard bundled transactions without a tip
 						return;
 					}
+					tip = this.bundlesTips[bundledIn];
 				} else {
 					// Discards V2 transactions without a tip
 					return;
@@ -250,11 +253,25 @@ export class DailyOutput {
 
 			const dataSize = +node.data.size;
 			this.sumSize(ownerAddress, dataSize);
+			this.sumTip(ownerAddress, tip);
+
+			// Set the block height once the minimum amount of data to participate is reached
+			if (
+				!this.data.wallets[ownerAddress].weekly.blockSinceParticipating &&
+				this.isCurrentlyParticipating(ownerAddress)
+			) {
+				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
+			}
 		}
 
 		this.latestBlock = Math.max(this.latestBlock, node.block.height);
 		this.latestTimestamp = Math.max(this.latestTimestamp, node.block.timestamp);
 	};
+
+	private isCurrentlyParticipating(address: string): boolean {
+		const currentByteCount = this.data.wallets[address].weekly.byteCount;
+		return currentByteCount >= ONE_THOUSAND_MB;
+	}
 
 	/**
 	 * Adds +1 to the file count
@@ -280,6 +297,18 @@ export class DailyOutput {
 	}
 
 	/**
+	 * Sums up the tip of the file data transaction
+	 * @param address the address of the owner wallet of the transaction
+	 * @param tip the tip to a valid PST holder of the file data transaction
+	 */
+	private sumTip(address: string, tip: number): void {
+		this.setupWallet(address);
+		this.data.wallets[address].daily.tips += tip;
+		this.data.wallets[address].weekly.tips += tip;
+		this.data.wallets[address].total.tips += tip;
+	}
+
+	/**
 	 * Will fill the data of a wallet if no present
 	 * @param address the address of whom to fill the data
 	 */
@@ -291,35 +320,40 @@ export class DailyOutput {
 					byteCount: 0,
 					changeInPercentage: 0,
 					rankPosition: 0,
-					tokensEarned: 0
+					tokensEarned: 0,
+					tips: 0
 				},
 				yesterday: {
 					fileCount: 0,
 					byteCount: 0,
 					changeInPercentage: 0,
 					rankPosition: 0,
-					tokensEarned: 0
+					tokensEarned: 0,
+					tips: 0
 				},
 				weekly: {
 					fileCount: 0,
 					byteCount: 0,
 					changeInPercentage: 0,
 					rankPosition: 0,
-					tokensEarned: 0
+					tokensEarned: 0,
+					tips: 0
 				},
 				lastWeek: {
 					fileCount: 0,
 					byteCount: 0,
 					changeInPercentage: 0,
 					rankPosition: 0,
-					tokensEarned: 0
+					tokensEarned: 0,
+					tips: 0
 				},
 				total: {
 					fileCount: 0,
 					byteCount: 0,
 					changeInPercentage: 0,
 					rankPosition: 0,
-					tokensEarned: 0
+					tokensEarned: 0,
+					tips: 0
 				}
 			};
 		}
