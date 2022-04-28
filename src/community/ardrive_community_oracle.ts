@@ -1,13 +1,10 @@
+import { ContractOracle, ContractReader } from './contract_oracle';
+import { ArDriveContractOracle } from './ardrive_contract_oracle';
 import Arweave from 'arweave';
+import { SmartweaveContractReader } from './smartweave_contract_oracle';
+import { VertoContractReader } from './verto_contract_oracle';
+import { TransactionID } from '../types';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from '../utils/constants';
-import {
-	TransactionID,
-	ArDriveContractOracle,
-	ContractReader,
-	ContractOracle,
-	VertoContractReader,
-	SmartweaveContractReader
-} from 'ardrive-core-js';
 
 const ARDRIVE_CONTRACT_TX = new TransactionID('-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ');
 
