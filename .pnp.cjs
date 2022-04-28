@@ -34,8 +34,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["@types/chai", "npm:4.3.1"],\
-            ["@types/jwk-to-pem", "npm:2.0.1"],\
-            ["@types/lodash", "npm:4.14.182"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/node-fetch", "npm:2.6.1"],\
@@ -1322,30 +1320,12 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
-      ["@types/jwk-to-pem", [\
-        ["npm:2.0.1", {\
-          "packageLocation": "./.yarn/cache/@types-jwk-to-pem-npm-2.0.1-783b4dc2e2-4fb0e1918c.zip/node_modules/@types/jwk-to-pem/",\
-          "packageDependencies": [\
-            ["@types/jwk-to-pem", "npm:2.0.1"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
       ["@types/keyv", [\
         ["npm:3.1.4", {\
           "packageLocation": "./.yarn/cache/@types-keyv-npm-3.1.4-a8082ea56b-e009a2bfb5.zip/node_modules/@types/keyv/",\
           "packageDependencies": [\
             ["@types/keyv", "npm:3.1.4"],\
             ["@types/node", "npm:17.0.25"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["@types/lodash", [\
-        ["npm:4.14.182", {\
-          "packageLocation": "./.yarn/cache/@types-lodash-npm-4.14.182-1073aac722-7dd137aa9d.zip/node_modules/@types/lodash/",\
-          "packageDependencies": [\
-            ["@types/lodash", "npm:4.14.182"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -4881,8 +4861,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["inferno-backend", "workspace:."],\
             ["@types/chai", "npm:4.3.1"],\
-            ["@types/jwk-to-pem", "npm:2.0.1"],\
-            ["@types/lodash", "npm:4.14.182"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/node-fetch", "npm:2.6.1"],\
