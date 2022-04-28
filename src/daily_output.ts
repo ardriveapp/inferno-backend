@@ -113,30 +113,22 @@ export class DailyOutput {
 
 		// compute group effort rewards
 		if (hasReachedMinimumGroupEffort) {
-			const ties = groupEffortParticipants.reduce((accumulator, address) => {
-				const clone = Object.assign({}, accumulator);
-				const byteCount = this.data.wallets[address].weekly.byteCount;
-				if (!clone[byteCount]) {
-					clone[byteCount] = [address];
-				} else {
-					clone[byteCount].push(address);
-				}
-				return clone;
-			}, {} as { [byteCount: number]: string[] });
-
-			const shuffledTies = Object.keys(ties)
-				.map((byteCount) => {
-					const tie = ties[+byteCount];
-					return tie
-						.map((value) => ({ value, sort: Math.random() }))
-						.sort((a, b) => a.sort - b.sort)
-						.map(({ value }) => value);
-				})
-				.reduce((accumulator, tie) => {
-					const clone = accumulator.slice();
-					clone.push(...tie);
-					return clone;
-				}, []);
+			/**
+			 * apply tiebreakers:
+			 * - by total upload volume
+			 * - by total tips sent
+			 * - by block since participating (i.e. has reached the minimum weekly data)
+			 */
+			const shuffledTies = groupEffortParticipants.sort((address_a, address_b) => {
+				const walletStat_a = this.data.wallets[address_a];
+				const walletStat_b = this.data.wallets[address_b];
+				const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
+				const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
+				const blockSinceParticipatingDiff =
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+					walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
+				return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
+			});
 
 			shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
 
