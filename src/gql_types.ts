@@ -49,6 +49,7 @@ export interface GQLNodeInterface {
 	data: GQLMetaDataInterface;
 	tags: GQLTagInterface[];
 	block: GQLBlockInterface;
+	bundledIn?: { id: string };
 	parent: {
 		id: string;
 	};

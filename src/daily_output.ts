@@ -191,7 +191,7 @@ export class DailyOutput {
 		let tip = +node.quantity.winston;
 		const tags = node.tags;
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
-		const bundledIn = tags.find((tag) => tag.name === 'Bundled-In')?.value;
+		const bundledIn = node.bundledIn?.id;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
@@ -200,14 +200,12 @@ export class DailyOutput {
 		const previousBlockHeight = this.previousData.blockHeight;
 		const previousDate = new Date(previousTimestamp);
 
-		// const firstQueryResult = queryResult[0];
 		const height = edge.node.block.height;
 
 		if (previousBlockHeight >= height) {
 			throw new Error('That block was already processed!');
 		}
 
-		// const latestQueryResult = queryResult[queryResult.length - 1];
 		const queryTimestamp = edge.node.block.timestamp;
 		const queryDate = new Date(queryTimestamp);
 
@@ -442,6 +440,7 @@ export class DailyOutput {
 			walletStat &&
 			Number.isInteger(walletStat.byteCount) &&
 			typeof walletStat.changeInPercentage === 'number' &&
+			!isNaN(walletStat.changeInPercentage) &&
 			Number.isInteger(walletStat.fileCount) &&
 			Number.isInteger(walletStat.rankPosition) &&
 			Number.isInteger(walletStat.tokensEarned)

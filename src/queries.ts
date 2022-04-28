@@ -64,14 +64,9 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 		if (response.edges.length) {
 			console.log(`Transactions count: ${response.edges.length}`);
 			const mostRecientTransaction = response.edges[response.edges.length - 1];
-			const oldestTransaction = response.edges[0];
 			const height = mostRecientTransaction.node.block.height;
 			cursor = mostRecientTransaction.cursor;
-			if (oldestTransaction.node.block.height > height) {
-				throw new Error(`WRONG!S~`);
-			}
 			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
-			console.log(`Current height: ${height}, prev: ${oldestTransaction.node.block.height}`);
 			prevBlock = height;
 			allEdges.push(...response.edges);
 			hasNextPage = response.pageInfo.hasNextPage;
@@ -129,7 +124,6 @@ function createQuery(minBlock: number, maxBlock: number, cursor?: string): Query
 				transactions(
 					block: { max: ${maxBlock}, min: ${minBlock} }
 					first: ${ITEMS_PER_REQUEST}
-					${cursor ? `after: "${cursor}"` : ''}
 					tags: [
 						{
 							name: "App-Name"
