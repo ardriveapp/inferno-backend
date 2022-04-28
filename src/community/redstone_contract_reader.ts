@@ -10,14 +10,14 @@ import { ContractReader } from './contract_oracle';
 export class RedstoneContractReader implements ContractReader {
 	smartweave: SmartWeave;
 
-	constructor(private readonly arweave: Arweave) {
+	constructor(arweave: Arweave) {
 		this.smartweave = SmartWeaveNodeFactory.memCachedBased(arweave).useRedStoneGateway().build();
 	}
 
 	/** Fetches smartweave contracts from Arweave with smartweave-js */
 	async readContract(txId: TransactionID, height?: number): Promise<unknown> {
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		return this.smartweave.readState(this.arweave, `${txId}`, height);
+		const contract = this.smartweave.contract(`${txId}`);
+		const result = await contract.readState(height);
+		return result.state;
 	}
 }

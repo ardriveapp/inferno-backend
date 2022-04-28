@@ -7,6 +7,7 @@ import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './i
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
  */
 export class DailyOutput {
+	private readonly previousData = this.read();
 	private data = this.read();
 	private latestBlock = 0;
 	private latestTimestamp = 0;
@@ -43,33 +44,6 @@ export class DailyOutput {
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
 	feedGQLData(queryResult: GQLEdgeInterface[]): void {
-		const previousData = this.read();
-		const previousTimestamp = previousData.timestamp;
-		const previousBlockHeight = previousData.blockHeight;
-		const previousDate = new Date(previousTimestamp);
-
-		const firstQueryResult = queryResult[0];
-		const firstBlockHeight = firstQueryResult.node.block.height;
-
-		if (previousBlockHeight >= firstBlockHeight) {
-			throw new Error('That block was already processed!');
-		}
-
-		const latestQueryResult = queryResult[queryResult.length - 1];
-		const queryTimestamp = latestQueryResult.node.block.timestamp;
-		const queryDate = new Date(queryTimestamp);
-
-		const isNewDay = previousDate.getDate() !== queryDate.getDate();
-		const isNewWeek = previousDate.getDay() !== queryDate.getDay();
-
-		if (isNewDay) {
-			this.resetDay();
-		}
-
-		if (isNewWeek) {
-			this.resetWeek();
-		}
-
 		queryResult.forEach(this.aggregateData);
 
 		this.finishDataAggregation();
@@ -87,24 +61,26 @@ export class DailyOutput {
 		this.data.blockHeight = this.latestBlock;
 		this.data.timestamp = this.latestTimestamp;
 
-		// sort addresses by ranking
 		const addresses = Object.keys(this.data.wallets);
-		const groupEffortRankings = addresses.sort((a, b) => {
-			const uploadedData_a = this.data.wallets[a].daily.byteCount;
-			const uploadedData_b = this.data.wallets[b].daily.byteCount;
-			return uploadedData_a - uploadedData_b;
-		});
 
 		// calculate change in percentage of the uploaded data and rank position
-		groupEffortRankings.forEach((address) => {
+		addresses.forEach((address) => {
+			// daily change
 			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
 			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
-			const changeInPercentage = ((uploadedDataToday - uploadedDataYesterday) / uploadedDataToday) * 100;
-			this.data.wallets[address].daily.changeInPercentage = changeInPercentage;
+			const changeInPercentageDaily = this.changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
+			this.data.wallets[address].daily.changeInPercentage = changeInPercentageDaily;
+
+			// weekly change
+			const uploadedDataLastWeek = this.data.wallets[address].yesterday.byteCount;
+			const uploadedDataCurrentWeek = this.data.wallets[address].daily.byteCount;
+			const changeInPercentageWeekly =
+				this.changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
+			this.data.wallets[address].daily.changeInPercentage = changeInPercentageWeekly;
 		});
 
 		// check if the minimum group effort was reached
-		const groupEffortParticipants = groupEffortRankings.filter(
+		const groupEffortParticipants = addresses.filter(
 			(address) => this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB
 		);
 		const hasReachedMinimumGroupEffort = groupEffortParticipants.length >= 50;
@@ -144,12 +120,25 @@ export class DailyOutput {
 		// TODO: determine if the wallets has uploaded data for 7 days in a row
 	}
 
+	private changeInPercentage(prev: number, curr: number): number {
+		if (prev === 0) {
+			if (curr === 0) {
+				// Both zero, there's no change
+				return 0;
+			} else {
+				// Previous is zero, current is greater: 100% change
+				return 1;
+			}
+		} else {
+			return (curr - prev) / prev;
+		}
+	}
+
 	/**
 	 * Will copy the data of today into yesterday's and clear the today's data
 	 */
 	private resetDay(): void {
-		const addresses = Object.keys(this.data.wallets);
-		for (const address in addresses) {
+		for (const address in this.data.wallets) {
 			this.data.wallets[address].yesterday = this.data.wallets[address].daily;
 			this.data.wallets[address].daily = {
 				byteCount: 0,
@@ -171,8 +160,7 @@ export class DailyOutput {
 	 * Will copy the data of the current week into the past one and clear the data of the current week
 	 */
 	private resetWeek(): void {
-		const addresses = Object.keys(this.data.wallets);
-		for (const address in addresses) {
+		for (const address in this.data.wallets) {
 			this.data.wallets[address].lastWeek = this.data.wallets[address].weekly;
 			this.data.wallets[address].weekly = {
 				byteCount: 0,
@@ -208,6 +196,32 @@ export class DailyOutput {
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
 
+		const previousTimestamp = this.previousData.timestamp;
+		const previousBlockHeight = this.previousData.blockHeight;
+		const previousDate = new Date(previousTimestamp);
+
+		// const firstQueryResult = queryResult[0];
+		const height = edge.node.block.height;
+
+		if (previousBlockHeight >= height) {
+			throw new Error('That block was already processed!');
+		}
+
+		// const latestQueryResult = queryResult[queryResult.length - 1];
+		const queryTimestamp = edge.node.block.timestamp;
+		const queryDate = new Date(queryTimestamp);
+
+		const isNewDay = previousDate.getDate() !== queryDate.getDate();
+		const isNewWeek = previousDate.getDay() !== queryDate.getDay();
+
+		if (isNewDay) {
+			this.resetDay();
+		}
+
+		if (isNewWeek) {
+			this.resetWeek();
+		}
+
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
@@ -217,6 +231,8 @@ export class DailyOutput {
 			this.bundlesTips[txId] = tip;
 		} else {
 			// is file data transaction
+
+			console.log(`Tip: ${JSON.stringify(node.quantity)}`);
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -234,11 +250,13 @@ export class DailyOutput {
 					}
 					if (!isTipPresent) {
 						// Discard bundled transactions without a tip
+						console.log(`Discarding bundled transaction with no tip: ${txId}`);
 						return;
 					}
 					tip = this.bundlesTips[bundledIn];
 				} else {
 					// Discards V2 transactions without a tip
+					console.log(`Discarding transaction with no tip: ${txId}`);
 					return;
 				}
 			}

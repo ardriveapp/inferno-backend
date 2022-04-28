@@ -56,16 +56,30 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 
 	let hasNextPage = true;
 	let prevBlock = minBlock - 1;
+	let cursor = '';
 
 	while (hasNextPage) {
-		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight));
+		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight), cursor);
 		const response = await sendQuery(query);
-		const mostRecientTransaction = response.edges[response.edges.length - 1];
-		const cursor = +mostRecientTransaction.cursor;
-		writeFileSync(gqlResultName(prevBlock + 1, cursor), JSON.stringify(response.edges));
-		prevBlock = cursor;
-		allEdges.push(...response.edges);
-		hasNextPage = response.pageInfo.hasNextPage;
+		if (response.edges.length) {
+			console.log(`Transactions count: ${response.edges.length}`);
+			const mostRecientTransaction = response.edges[response.edges.length - 1];
+			const oldestTransaction = response.edges[0];
+			const height = mostRecientTransaction.node.block.height;
+			cursor = mostRecientTransaction.cursor;
+			if (oldestTransaction.node.block.height > height) {
+				throw new Error(`WRONG!S~`);
+			}
+			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
+			console.log(`Current height: ${height}, prev: ${oldestTransaction.node.block.height}`);
+			prevBlock = height;
+			allEdges.push(...response.edges);
+			hasNextPage = response.pageInfo.hasNextPage;
+			console.log(`Query has next page: ${hasNextPage}`);
+		} else {
+			console.log(`Ignoring empty GQL response`);
+			hasNextPage = false;
+		}
 	}
 
 	return allEdges;
@@ -97,6 +111,7 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 		console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
 		throw new Error(errors.message);
 	}
+	// console.log(`Query result: ${JSON.stringify(JSONBody, null, '\t')}`);
 	return JSONBody.data.transactions as GQLTransactionsResultInterface;
 }
 
@@ -106,19 +121,22 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
  * @param maxBlock an integer representing the block until where to query the data
  * @returns
  */
-function createQuery(minBlock: number, maxBlock: number): Query {
+function createQuery(minBlock: number, maxBlock: number, cursor?: string): Query {
+	console.log(`QUERY: ${minBlock} - ${maxBlock}, after: ${cursor}`);
 	return {
 		query: `
 			query {
 				transactions(
 					block: { max: ${maxBlock}, min: ${minBlock} }
 					first: ${ITEMS_PER_REQUEST}
+					${cursor ? `after: "${cursor}"` : ''}
 					tags: [
 						{
 							name: "App-Name"
 							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
 						}
 					]
+					sort: HEIGHT_ASC
 				) {
 					pageInfo {
 						hasNextPage
