@@ -1880,7 +1880,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:*":
+"axios@npm:*, axios@npm:^0.26.1":
   version: 0.26.1
   resolution: "axios@npm:0.26.1"
   dependencies:
@@ -4131,19 +4131,20 @@ __metadata:
     "@yarnpkg/sdks": ^3.0.0-rc.2
     ardrive-core-js: ^1.12.0
     arweave: 1.10.18
+    axios: ^0.26.1
     chai: ^4.3.6
     eslint: ^8.13.0
     eslint-config-prettier: ^8.1.0
     eslint-plugin-prettier: latest
     husky: ^7.0.4
     lint-staged: ^11.0.0
-    lodash: ^4.17.21
     mocha: ^9.2.2
     node-fetch: ^2.6.1
     nyc: ^15.1.0
     prettier: ^2.2.1
     rimraf: ^3.0.2
     sinon: ^13.0.2
+    smartweave: ^0.4.48
     ts-node: ^10.7.0
     typescript: ^4.6.3
     yargs: ^17.4.1
@@ -6376,7 +6377,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"smartweave@npm:^0.4.45":
+"smartweave@npm:^0.4.45, smartweave@npm:^0.4.48":
   version: 0.4.48
   resolution: "smartweave@npm:0.4.48"
   dependencies:
