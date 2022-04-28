@@ -1,4 +1,4 @@
-import { GQLEdgeInterface, GQLTransactionsResultInterface } from 'ardrive-core-js';
+import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import fetch from 'node-fetch';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
