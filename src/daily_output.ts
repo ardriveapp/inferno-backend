@@ -1,6 +1,6 @@
-import { GQLEdgeInterface } from 'ardrive-core-js';
 import { readFileSync, writeFileSync } from 'fs';
 import { GROUP_EFFORT_REWARDS, ONE_THOUSAND_MB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
+import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
 
 /**
