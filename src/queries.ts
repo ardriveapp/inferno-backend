@@ -113,8 +113,9 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			}
 			// console.log(`Query result: ${JSON.stringify(JSONBody, null, '\t')}`);
 			return JSONBody.data.transactions as GQLTransactionsResultInterface;
-		} catch {
+		} catch (e) {
 			pendingRetries--;
+			console.log(`Error while querying. Retrying (${pendingRetries}). ${JSON.stringify(e)}`);
 			continue;
 		}
 	}

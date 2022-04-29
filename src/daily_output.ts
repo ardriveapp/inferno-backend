@@ -199,7 +199,7 @@ export class DailyOutput {
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
 
-		const previousTimestamp = this.previousData.timestamp;
+		const previousTimestamp = this.latestTimestamp;
 		const previousBlockHeight = this.previousData.blockHeight;
 		const previousDate = new Date(previousTimestamp);
 
@@ -216,26 +216,28 @@ export class DailyOutput {
 		const isNewWeek = previousDate.getDay() !== queryDate.getDay();
 
 		if (isNewDay) {
+			console.log(`Counting new day: ${queryDate.getDate()}, prev: ${previousDate.getDate()}`);
 			this.resetDay();
 		}
 
 		if (isNewWeek) {
+			console.log(`Counting new week: ${queryDate.getDay()}, prev: ${previousDate.getDay()}`);
 			this.resetWeek();
 		}
 
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
-				console.log(`Found file metadata transaction: ${txId}`);
+				// console.log(`Found file metadata transaction: ${txId}`);
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			console.log(`Found bundle transaction: ${txId}`);
+			// console.log(`Found bundle transaction: ${txId}`);
 			this.bundlesTips[txId] = tip;
 			let unverified;
 
-			while ((unverified = this.bundlesToVerify[txId].pop())) {
-				console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
+			while (this.bundlesToVerify[txId] && (unverified = this.bundlesToVerify[txId].pop())) {
+				// console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
 				const dataSize = unverified.fileSize;
 				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, tip);
@@ -243,7 +245,7 @@ export class DailyOutput {
 		} else {
 			// it is file data transaction
 
-			console.log(`Found file data transaction ${txId}`);
+			// console.log(`Found file data transaction ${txId}`);
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -280,7 +282,7 @@ export class DailyOutput {
 				}
 			}
 
-			console.log(`Summing up file data transaction: ${txId}`);
+			// console.log(`Summing up file data transaction: ${txId}`);
 
 			this.sumSize(ownerAddress, dataSize);
 			this.sumTip(ownerAddress, tip);
