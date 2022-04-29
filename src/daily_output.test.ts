@@ -3,9 +3,11 @@ import { rmSync, writeFileSync } from 'fs';
 import Sinon from 'sinon';
 import { OUTPUT_NAME } from './constants';
 import { DailyOutput } from './daily_output';
+import { OutputData } from './inferno_types';
 
 // this JSON is different than the base template
-const mockDailyOutput = {
+const mockDailyOutput: OutputData = {
+	lastUpdated: 914200,
 	blockHeight: 914200,
 	timestamp: 1650043449000,
 	PSTHolders: {},
@@ -38,6 +40,7 @@ const mockDailyOutputStringified = `${JSON.stringify(mockDailyOutput, null, '\t'
 
 // a valid JSON with missing mandatory fields
 const mockMalformedDailyOutput = {
+	lastUpdated: 914200,
 	blockHeight: 914200,
 	timestamp: 1650043449000,
 	PSTHolders: {},

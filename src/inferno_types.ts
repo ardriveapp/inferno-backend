@@ -3,10 +3,13 @@ export interface Query {
 }
 
 export interface OutputData {
-	// The last block height of the run
+	// The timestamp for when the data aggregation has run
+	lastUpdated: number;
+
+	// The last block height read
 	blockHeight: number;
 
-	// The time it has run
+	// The last block's timestamp read
 	timestamp: number;
 
 	// PST Holders' staked tokens

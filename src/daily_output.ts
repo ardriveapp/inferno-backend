@@ -146,6 +146,8 @@ export class DailyOutput {
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
 		// TODO: determine if the wallets has uploaded data for 7 days in a row
+
+		this.data.lastUpdated = Date.now();
 	}
 
 	private changeInPercentage(prev: number, curr: number): number {
@@ -440,6 +442,7 @@ export class DailyOutput {
 	private validateDataStructure(data: unknown): data is OutputData {
 		const dataAsOutputData = data as OutputData;
 		return !!(
+			dataAsOutputData.lastUpdated &&
 			dataAsOutputData.PSTHolders &&
 			dataAsOutputData.blockHeight &&
 			dataAsOutputData.timestamp &&
