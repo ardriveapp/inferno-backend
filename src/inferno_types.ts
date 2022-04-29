@@ -2,6 +2,9 @@ export interface Query {
 	query: string;
 }
 
+/**
+ * the main interface representing the whole derivated data
+ */
 export interface OutputData {
 	// The timestamp for when the data aggregation has run
 	lastUpdated: number;
@@ -21,10 +24,16 @@ export interface OutputData {
 	ranks: Ranks;
 }
 
+/**
+ * key/value of address/tokens above 200 ARDRIVE locked for at least 21600 blocks (~30 days)
+ */
 export interface StakedPSTHolders {
 	[address: string]: number;
 }
 
+/**
+ * key/value of by-timeframe addresses
+ */
 export interface WalletsStats {
 	[address: string]: {
 		daily: WalletStatEntry;
@@ -35,6 +44,9 @@ export interface WalletsStats {
 	};
 }
 
+/**
+ * pertinent data count of a wallet within a timeframe
+ */
 export interface WalletStatEntry {
 	// Total of uploaded bytes by private and public files
 	byteCount: number;
@@ -58,6 +70,9 @@ export interface WalletStatEntry {
 	blockSinceParticipating?: number;
 }
 
+/**
+ * by-timeframe ranks
+ */
 export interface Ranks {
 	daily: RankEntry;
 	weekly: RankEntry;
@@ -65,6 +80,9 @@ export interface Ranks {
 	total: RankEntryTotal;
 }
 
+/**
+ * represents the rewards
+ */
 export interface RankEntry {
 	// True only when at least 50 wallets has uploaded 50 GIB
 	hasReachedMinimumGroupEffort: boolean;
@@ -76,6 +94,9 @@ export interface RankEntry {
 	streakRewards: Rewards;
 }
 
+/**
+ * represents the total rewards
+ */
 export interface RankEntryTotal {
 	// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
 	groupEffortRewards: Rewards;
@@ -84,4 +105,7 @@ export interface RankEntryTotal {
 	streakRewards: Rewards;
 }
 
+/**
+ * array of rewards per address
+ */
 export type Rewards = Array<{ address: string; rewards: number }>;
