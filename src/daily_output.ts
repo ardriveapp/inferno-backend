@@ -17,7 +17,7 @@ export class DailyOutput {
 	/**
 	 * Takes the data from the previously generated data, fallbacking to the base template if not present
 	 * @throws if the validation of the output file fails
-	 * @retuns {OutputData}
+	 * @returns {OutputData}
 	 */
 	public read(): OutputData {
 		const data = (() => {
