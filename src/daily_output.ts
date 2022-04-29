@@ -2,7 +2,6 @@ import { readFileSync, writeFileSync } from 'fs';
 import { GROUP_EFFORT_REWARDS, ONE_THOUSAND_MB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
-import { getAllBundleTips } from './queries';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
@@ -14,8 +13,6 @@ export class DailyOutput {
 	private latestTimestamp = 0;
 	private bundlesTips: { [txId: string]: number } = {};
 	private bundlesToVerify: { [txId: string]: { walletAddress: string; fileSize: number }[] } = {};
-
-	constructor(private readonly heightRange: [number, number]) {}
 
 	/**
 	 * Takes the data from the previously generated data, fallbacking to the base template if not present
@@ -61,31 +58,6 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
-		// Check for bundle tips
-		const unverifiedBundlesTxId = Object.keys(this.bundlesToVerify);
-		if (unverifiedBundlesTxId.length) {
-			// console.log(`About to verify bundles' tips for: ${JSON.stringify(unverifiedBundlesTxId)}`);
-			const bundleQueryResult = await getAllBundleTips(this.heightRange[1], unverifiedBundlesTxId);
-			for (const edge of bundleQueryResult) {
-				const txId = edge.node.id;
-				const tip = +edge.node.quantity.winston;
-				const address = edge.node.owner.address;
-				if (tip) {
-					let unverified;
-					while ((unverified = this.bundlesToVerify[txId].pop())) {
-						// console.log(
-						// 	`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`
-						// );
-						const dataSize = unverified.fileSize;
-						this.sumSize(address, dataSize);
-						this.sumTip(address, tip);
-					}
-				} else {
-					// console.log(`Discarding bundled transaction with no tip: ${txId}`);
-				}
-			}
-		}
-
 		this.data.blockHeight = this.latestBlock;
 		this.data.timestamp = this.latestTimestamp;
 
@@ -260,8 +232,18 @@ export class DailyOutput {
 		} else if (isBundleTransaction) {
 			console.log(`Found bundle transaction: ${txId}`);
 			this.bundlesTips[txId] = tip;
+			let unverified;
+
+			while ((unverified = this.bundlesToVerify[txId].pop())) {
+				console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
+				const dataSize = unverified.fileSize;
+				this.sumSize(ownerAddress, dataSize);
+				this.sumTip(ownerAddress, tip);
+			}
 		} else {
 			// it is file data transaction
+
+			console.log(`Found file data transaction ${txId}`);
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -275,7 +257,6 @@ export class DailyOutput {
 				if (isBundledTransaction) {
 					const isTipPresent = this.bundlesTips[bundledIn];
 					if (isTipPresent === undefined) {
-						// throw new Error("Bundle transaction wasn't read. Cannot calculate tip");
 						if (!this.bundlesToVerify[bundledIn]) {
 							this.bundlesToVerify[bundledIn] = [];
 						}
@@ -283,7 +264,7 @@ export class DailyOutput {
 							walletAddress: ownerAddress,
 							fileSize: dataSize
 						});
-						// The bunlde will tip be checked after the whole data is processed
+						// The bunlde tip will be checked after the whole data is processed
 						return;
 					}
 					if (!isTipPresent) {
@@ -298,6 +279,8 @@ export class DailyOutput {
 					return;
 				}
 			}
+
+			console.log(`Summing up file data transaction: ${txId}`);
 
 			this.sumSize(ownerAddress, dataSize);
 			this.sumTip(ownerAddress, tip);

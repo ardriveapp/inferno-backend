@@ -49,7 +49,7 @@ function run(): void {
  * @param maxBlock an integer representing the block until where to query the data
  */
 async function aggregateOutputData(minBlock: number, maxBlock: number): Promise<void> {
-	const output = new DailyOutput([minBlock, maxBlock]);
+	const output = new DailyOutput();
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
 	const edges = await getAllTransactionsWithin(minBlock, maxBlock);
