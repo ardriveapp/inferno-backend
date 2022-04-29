@@ -42,6 +42,40 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	return Object.fromEntries(stakedForAtLeastOneMonth);
 }
 
+export async function getAllBundleTips(
+	// minBlock: number,
+	maxBlock: number,
+	bundleIDs: string[]
+): Promise<GQLEdgeInterface[]> {
+	const allEdges: GQLEdgeInterface[] = [];
+
+	const blockHeight = await getBlockHeight();
+	const trustedHeight = blockHeight - 50;
+
+	let hasNextPage = true;
+	let prevBlock = 0;
+
+	while (hasNextPage) {
+		const query = createBundleQuery(bundleIDs, prevBlock + 1, Math.min(maxBlock, trustedHeight));
+		const response = await sendQuery(query);
+		if (response.edges.length) {
+			console.log(`Transactions count: ${response.edges.length}`);
+			const mostRecientTransaction = response.edges[response.edges.length - 1];
+			const height = mostRecientTransaction.node.block.height;
+			// writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
+			prevBlock = height;
+			allEdges.push(...response.edges);
+			hasNextPage = response.pageInfo.hasNextPage;
+			console.log(`Bundle query has next page: ${hasNextPage}`);
+		} else {
+			console.log(`Ignoring empty bundle GQL response`);
+			hasNextPage = false;
+		}
+	}
+
+	return allEdges;
+}
+
 /**
  * Queries GQL for all ArDrive transactions within a range of blocks
  * @param minBlock an integer representing the block from where to query the data
@@ -56,16 +90,14 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 
 	let hasNextPage = true;
 	let prevBlock = minBlock - 1;
-	let cursor = '';
 
 	while (hasNextPage) {
-		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight), cursor);
+		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight));
 		const response = await sendQuery(query);
 		if (response.edges.length) {
 			console.log(`Transactions count: ${response.edges.length}`);
 			const mostRecientTransaction = response.edges[response.edges.length - 1];
 			const height = mostRecientTransaction.node.block.height;
-			cursor = mostRecientTransaction.cursor;
 			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
 			prevBlock = height;
 			allEdges.push(...response.edges);
@@ -116,8 +148,7 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
  * @param maxBlock an integer representing the block until where to query the data
  * @returns
  */
-function createQuery(minBlock: number, maxBlock: number, cursor?: string): Query {
-	console.log(`QUERY: ${minBlock} - ${maxBlock}, after: ${cursor}`);
+function createQuery(minBlock: number, maxBlock: number): Query {
 	return {
 		query: `
 			query {
@@ -128,6 +159,66 @@ function createQuery(minBlock: number, maxBlock: number, cursor?: string): Query
 						{
 							name: "App-Name"
 							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
+						}
+					]
+					sort: HEIGHT_ASC
+				) {
+					pageInfo {
+						hasNextPage
+					}
+					edges {
+						cursor
+						node {
+							id
+							owner {
+								address
+							}
+							bundledIn {
+								id
+							}
+							tags {
+								name
+								value
+							}
+							data {
+								size
+								type
+							}
+							quantity {
+								winston
+							}
+							block {
+								timestamp
+								height
+							}
+						}
+					}
+				}
+			}`
+	};
+}
+/**
+ * Returns a query object to math all ArDrive transactions within a range of blocks
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ * @returns
+ */
+function createBundleQuery(bundleIDs: string[], minBlock?: number, maxBlock?: number): Query {
+	return {
+		query: `
+			query {
+				transactions(
+					ids: [${bundleIDs.map((txId) => `"${txId}"`)}]
+					${(minBlock || maxBlock) && `block: {${maxBlock ? `max: ${maxBlock}` : ''} ${minBlock ? `min: ${minBlock}` : ''} }`}
+					first: ${ITEMS_PER_REQUEST}
+					tags: [
+						{
+							name: "App-Name"
+							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
+						}
+						{
+							name: "Tip-Type",
+							values: "data upload"
 						}
 					]
 					sort: HEIGHT_ASC
