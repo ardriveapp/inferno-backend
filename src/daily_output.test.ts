@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { rmSync, writeFileSync } from 'fs';
+import { existsSync, rmSync, writeFileSync } from 'fs';
 import Sinon from 'sinon';
 import { OUTPUT_NAME } from './constants';
 import { DailyOutput } from './daily_output';
@@ -76,7 +76,9 @@ describe('DailyOutput class', () => {
 
 	describe('read method', () => {
 		before(() => {
-			rmSync(OUTPUT_NAME);
+			if (existsSync(OUTPUT_NAME)) {
+				rmSync(OUTPUT_NAME);
+			}
 		});
 
 		it('return the template if the file is not present', () => {
