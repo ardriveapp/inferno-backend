@@ -1,5 +1,5 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
-import fetch from 'node-fetch';
+import Axios from 'axios';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
@@ -90,8 +90,9 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 	let responseOk: boolean | undefined;
 
 	while (!responseOk && pendingRetries >= 0) {
-		const response = await fetch(GQL_URL, {
+		const response = await Axios.request({
 			method: 'POST',
+			url: GQL_URL,
 			headers: {
 				'Accept-Encoding': 'gzip, deflate, br',
 				'Content-Type': 'application/json',
@@ -100,12 +101,12 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 				DNT: '1',
 				Origin: GQL_URL
 			},
-			body: JSON.stringify(query)
+			data: JSON.stringify(query)
 		});
-		responseOk = response.ok;
+		responseOk = response.status >= 200 && response.status < 300;
 
 		try {
-			const JSONBody = await response.json();
+			const JSONBody = response.data;
 			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
 			if (errors) {
 				console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
