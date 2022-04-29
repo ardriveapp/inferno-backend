@@ -2,7 +2,7 @@ import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import fetch from 'node-fetch';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
-import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, VALID_APP_NAMES } from './constants';
+import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
 import { writeFileSync } from 'fs';
 import { getBlockHeight, gqlResultName } from './common';
 
@@ -120,26 +120,39 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
  */
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
 	// TODO: implement retry here
-	const response = await fetch(GQL_URL, {
-		method: 'POST',
-		headers: {
-			'Accept-Encoding': 'gzip, deflate, br',
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-			Connection: 'keep-alive',
-			DNT: '1',
-			Origin: GQL_URL
-		},
-		body: JSON.stringify(query)
-	});
-	const JSONBody = await response.json();
-	const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
-	if (errors) {
-		console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
-		throw new Error(errors.message);
+	let pendingRetries = MAX_RETRIES;
+	let responseOk: boolean | undefined;
+
+	while (!responseOk && pendingRetries >= 0) {
+		const response = await fetch(GQL_URL, {
+			method: 'POST',
+			headers: {
+				'Accept-Encoding': 'gzip, deflate, br',
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				Connection: 'keep-alive',
+				DNT: '1',
+				Origin: GQL_URL
+			},
+			body: JSON.stringify(query)
+		});
+		responseOk = response.ok;
+
+		try {
+			const JSONBody = await response.json();
+			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
+			if (errors) {
+				console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
+				throw new Error(JSON.stringify(errors));
+			}
+			// console.log(`Query result: ${JSON.stringify(JSONBody, null, '\t')}`);
+			return JSONBody.data.transactions as GQLTransactionsResultInterface;
+		} catch {
+			pendingRetries--;
+			continue;
+		}
 	}
-	// console.log(`Query result: ${JSON.stringify(JSONBody, null, '\t')}`);
-	return JSONBody.data.transactions as GQLTransactionsResultInterface;
+	throw new Error(`Retries on the query failed!`);
 }
 
 /**

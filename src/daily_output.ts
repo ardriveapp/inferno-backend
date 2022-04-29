@@ -254,9 +254,11 @@ export class DailyOutput {
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
+				console.log(`Found file metadata transaction: ${txId}`);
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
+			console.log(`Found bundle transaction: ${txId}`);
 			this.bundlesTips[txId] = tip;
 		} else {
 			// it is file data transaction

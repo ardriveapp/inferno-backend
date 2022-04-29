@@ -9,3 +9,4 @@ export const GQL_URL = 'https://arweave.net/graphql';
 export const ITEMS_PER_REQUEST = 100;
 export const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'] as const;
 export const BLOCKS_PER_MONTH = 21600;
+export const MAX_RETRIES = 8;
