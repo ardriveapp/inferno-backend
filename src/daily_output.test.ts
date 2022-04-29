@@ -35,8 +35,8 @@ const mockDailyOutput: OutputData = {
 	}
 };
 
-// The avobe JSON stringified with tabs and a trailing new line
-const mockDailyOutputStringified = `${JSON.stringify(mockDailyOutput, null, '\t')}\n`;
+// The above JSON stringified with tabs and a trailing new line
+const mockStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(mockDailyOutput, null, '\t')}\n`;
 
 // a valid JSON with missing mandatory fields
 const mockMalformedDailyOutput = {
@@ -68,8 +68,8 @@ const mockMalformedDailyOutput = {
 	}
 };
 
-// The avobe JSON stringified with tabs and a trailing new line
-const mockMalformedDailyOutputStringified = `${JSON.stringify(mockMalformedDailyOutput, null, '\t')}\n`;
+// The above JSON stringified with tabs and a trailing new line
+const mockMalformedStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(mockMalformedDailyOutput, null, '\t')}\n`;
 
 describe('DailyOutput class', () => {
 	const output = new DailyOutput();
@@ -111,12 +111,12 @@ describe('DailyOutput class', () => {
 		});
 
 		it('return the actual file if present', () => {
-			writeFileSync(OUTPUT_NAME, mockDailyOutputStringified);
+			writeFileSync(OUTPUT_NAME, mockStringifyWithTabsAndTrailingNewLine);
 			expect(output.read()).to.deep.equal(mockDailyOutput);
 		});
 
 		it('throws if the file has missing fields', () => {
-			writeFileSync(OUTPUT_NAME, mockMalformedDailyOutputStringified);
+			writeFileSync(OUTPUT_NAME, mockMalformedStringifyWithTabsAndTrailingNewLine);
 			expect(output.readOutputFile).not.to.throw();
 			expect(output.read).to.throw();
 		});
