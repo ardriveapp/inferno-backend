@@ -124,7 +124,7 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 }
 
 /**
- * Returns a query object to math all ArDrive transactions within a range of blocks
+ * Returns a query object to match all ArDrive transactions within a range of blocks
  * @param minBlock an integer representing the block from where to query the data
  * @param maxBlock an integer representing the block until where to query the data
  * @returns
