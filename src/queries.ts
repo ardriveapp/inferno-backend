@@ -73,6 +73,7 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 			console.log(`Query has next page: ${hasNextPage}`);
 		} else {
 			console.log(`Ignoring empty GQL response`);
+			hasNextPage = false;
 		}
 	}
 
