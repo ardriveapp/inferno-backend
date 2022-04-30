@@ -37,14 +37,14 @@ export class DailyOutput {
 	/**
 	 * @param {StakedPSTHolders} stakedPSTHolders key/value of address/tokens above 200 ARDRIVE locked for at least 21600 blocks (~30 days)
 	 */
-	feedPSTHolders(stakedPSTHolders: StakedPSTHolders): void {
+	public feedPSTHolders(stakedPSTHolders: StakedPSTHolders): void {
 		this.data.PSTHolders = stakedPSTHolders;
 	}
 
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
+	public feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
 		queryResult.forEach(this.aggregateData);
 		return this.finishDataAggregation();
 	}
