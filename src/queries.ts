@@ -6,6 +6,8 @@ import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NA
 import { writeFileSync } from 'fs';
 import { getBlockHeight, gqlResultName } from './common';
 
+const initialErrorDelayMS = 1000;
+
 /**
  * Filters the result of getStakedPSTHolders in order to get the holders that staked at least ↁ200
  * @returns {Promise<StakedPSTHolders>}
@@ -90,6 +92,11 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 	let responseOk: boolean | undefined;
 
 	while (!responseOk && pendingRetries >= 0) {
+		if (pendingRetries !== MAX_RETRIES) {
+			const currentRetry = MAX_RETRIES - pendingRetries;
+			await exponentialBackOffAfterFailedRequest(currentRetry);
+		}
+
 		const response = await Axios.request({
 			method: 'POST',
 			url: GQL_URL,
@@ -121,6 +128,11 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 		}
 	}
 	throw new Error(`Retries on the query failed!`);
+}
+
+async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promise<void> {
+	const delay = Math.pow(2, retryNumber) * initialErrorDelayMS;
+	await new Promise((res) => setTimeout(res, delay));
 }
 
 /**
