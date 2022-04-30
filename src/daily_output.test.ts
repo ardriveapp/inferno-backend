@@ -72,7 +72,7 @@ const mockMalformedDailyOutput = {
 const mockMalformedStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(mockMalformedDailyOutput, null, '\t')}\n`;
 
 describe('DailyOutput class', () => {
-	const output = new DailyOutput();
+	const output = new DailyOutput([50, 100]);
 
 	describe('read method', () => {
 		before(() => {

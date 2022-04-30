@@ -20,6 +20,8 @@ export class DailyOutput {
 	private bundlesTips: { [txId: string]: number } = {};
 	private bundlesToVerify: { [txId: string]: { walletAddress: string; fileSize: number }[] } = {};
 
+	constructor(private heightRange: [number, number]) {}
+
 	/**
 	 * Takes the data from the previously generated data, fallbacking to the base template if not present
 	 * @throws if the validation of the output file fails
@@ -64,7 +66,7 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
-		this.data.blockHeight = this.latestBlock;
+		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
 		const addresses = Object.keys(this.data.wallets);
