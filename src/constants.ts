@@ -1,3 +1,5 @@
+import { WalletStatEntry } from './inferno_types';
+
 export const OUTPUT_TEMPLATE_NAME = 'daily_output.base.json';
 export const OUTPUT_NAME = 'daily_output.json';
 export const ONE_THOUSAND_MB = 1000 * 1000 * 1;
@@ -10,3 +12,13 @@ export const ITEMS_PER_REQUEST = 100;
 export const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'] as const;
 export const BLOCKS_PER_MONTH = 21600;
 export const MAX_RETRIES = 8;
+export const initialWalletStats = (): WalletStatEntry => {
+	return {
+		fileCount: 0,
+		byteCount: 0,
+		changeInPercentage: 0,
+		rankPosition: 0,
+		tokensEarned: 0,
+		tips: 0
+	};
+};

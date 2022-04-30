@@ -1,5 +1,11 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { GROUP_EFFORT_REWARDS, ONE_THOUSAND_MB, OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
+import {
+	GROUP_EFFORT_REWARDS,
+	initialWalletStats,
+	ONE_THOUSAND_MB,
+	OUTPUT_NAME,
+	OUTPUT_TEMPLATE_NAME
+} from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
 
@@ -347,46 +353,11 @@ export class DailyOutput {
 	private setupWallet(address: string): void {
 		if (!this.data.wallets[address]) {
 			this.data.wallets[address] = {
-				daily: {
-					fileCount: 0,
-					byteCount: 0,
-					changeInPercentage: 0,
-					rankPosition: 0,
-					tokensEarned: 0,
-					tips: 0
-				},
-				yesterday: {
-					fileCount: 0,
-					byteCount: 0,
-					changeInPercentage: 0,
-					rankPosition: 0,
-					tokensEarned: 0,
-					tips: 0
-				},
-				weekly: {
-					fileCount: 0,
-					byteCount: 0,
-					changeInPercentage: 0,
-					rankPosition: 0,
-					tokensEarned: 0,
-					tips: 0
-				},
-				lastWeek: {
-					fileCount: 0,
-					byteCount: 0,
-					changeInPercentage: 0,
-					rankPosition: 0,
-					tokensEarned: 0,
-					tips: 0
-				},
-				total: {
-					fileCount: 0,
-					byteCount: 0,
-					changeInPercentage: 0,
-					rankPosition: 0,
-					tokensEarned: 0,
-					tips: 0
-				}
+				daily: initialWalletStats(),
+				yesterday: initialWalletStats(),
+				weekly: initialWalletStats(),
+				lastWeek: initialWalletStats(),
+				total: initialWalletStats()
 			};
 		}
 	}
