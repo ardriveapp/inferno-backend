@@ -85,6 +85,7 @@ describe('DailyOutput class', () => {
 			expect(output.readOutputFile).to.throw();
 			expect(output.read()).to.deep.equal({
 				blockHeight: 914117,
+				lastUpdated: 1650043442070,
 				timestamp: 1650043442070,
 				PSTHolders: {},
 				wallets: {},
