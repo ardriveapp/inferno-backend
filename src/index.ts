@@ -2,7 +2,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { DailyOutput } from './daily_output';
-import { getAllTransactionsWithin, getWalletsEligibleForStreak } from './queries';
+import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './queries';
 
 /**
  * A Python-like approach to determine if the JS code is running this exact module, and not being imported
@@ -52,7 +52,7 @@ async function aggregateOutputData(minBlock: number, maxBlock: number): Promise<
 	const output = new DailyOutput();
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
-	const edges = await getAllTransactionsWithin(minBlock, maxBlock);
+	const edges = await getAllArDriveTransactionsWithin(minBlock, maxBlock);
 	await output.feedGQLData(edges);
 	output.write();
 }

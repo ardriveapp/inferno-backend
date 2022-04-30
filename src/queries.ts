@@ -50,7 +50,7 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  * @param maxBlock an integer representing the block until where to query the data
  * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
  */
-export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
+export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
 	const allEdges: GQLEdgeInterface[] = [];
 
 	const blockHeight = await getBlockHeight();
@@ -73,7 +73,6 @@ export async function getAllTransactionsWithin(minBlock: number, maxBlock: numbe
 			console.log(`Query has next page: ${hasNextPage}`);
 		} else {
 			console.log(`Ignoring empty GQL response`);
-			hasNextPage = false;
 		}
 	}
 
