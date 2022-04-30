@@ -64,8 +64,8 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 		const response = await sendQuery(query);
 		if (response.edges.length) {
 			console.log(`Transactions count: ${response.edges.length}`);
-			const mostRecientTransaction = response.edges[response.edges.length - 1];
-			const height = mostRecientTransaction.node.block.height;
+			const mostRecentTransaction = response.edges[response.edges.length - 1];
+			const height = mostRecentTransaction.node.block.height;
 			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
 			prevBlock = height;
 			allEdges.push(...response.edges);
