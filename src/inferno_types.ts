@@ -87,7 +87,7 @@ export interface RankEntry {
 	// True only when at least 50 wallets has uploaded 50 GIB
 	hasReachedMinimumGroupEffort: boolean;
 
-	// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
+	// Is an array of 50 elements for the Wallet Address and earned ARDRIVE tokens
 	groupEffortRewards: Rewards;
 
 	// An array of addresses in streak, and the earned ARDRIVE tokens
@@ -98,7 +98,7 @@ export interface RankEntry {
  * represents the total rewards
  */
 export interface RankEntryTotal {
-	// Is an array of 50 elements for the Wallet Addres and earned ARDRIVE tokens
+	// Is an array of 50 elements for the Wallet Address and earned ARDRIVE tokens
 	groupEffortRewards: Rewards;
 
 	// An array of addresses in streak, and the earned ARDRIVE tokens
