@@ -115,14 +115,14 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			const JSONBody = response.data;
 			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
 			if (errors) {
-				console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
-				throw new Error(JSON.stringify(errors));
+				pendingRetries--;
+				console.log(`Retrying (${pendingRetries}). ${JSON.stringify(errors)}`);
+				continue;
 			}
-			// console.log(`Query result: ${JSON.stringify(JSONBody, null, '\t')}`);
 			return JSONBody.data.transactions as GQLTransactionsResultInterface;
 		} catch (e) {
 			pendingRetries--;
-			console.log(`Error while querying. Retrying (${pendingRetries}). ${JSON.stringify(e)}`);
+			console.log(`Retrying (${pendingRetries}). ${JSON.stringify(e)}`);
 			continue;
 		}
 	}
