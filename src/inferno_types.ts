@@ -108,4 +108,4 @@ export interface RankEntryTotal {
 /**
  * array of rewards per address
  */
-export type Rewards = Array<{ address: string; rewards: number }>;
+export type Rewards = Array<{ address: string; rewards: number; rankPosition: number }>;

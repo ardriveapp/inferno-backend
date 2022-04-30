@@ -88,40 +88,50 @@ export class DailyOutput {
 		});
 
 		// check if the minimum group effort was reached
-		const groupEffortParticipants = addresses.filter(
-			(address) => this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB
-		);
+		const groupEffortParticipants: string[] = [];
+		const otherParticipants: string[] = [];
+		addresses.forEach((address) => {
+			if (this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB) {
+				groupEffortParticipants.push(address);
+			} else {
+				otherParticipants.push(address);
+			}
+		});
+
 		const hasReachedMinimumGroupEffort = groupEffortParticipants.length >= 50;
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
-		// compute group effort rewards
-		if (hasReachedMinimumGroupEffort) {
-			/**
-			 * apply tiebreakers:
-			 * - by total upload volume
-			 * - by total tips sent
-			 * - by block since participating (i.e. has reached the minimum weekly data)
-			 */
-			const shuffledTies = groupEffortParticipants.sort((address_a, address_b) => {
-				const walletStat_a = this.data.wallets[address_a];
-				const walletStat_b = this.data.wallets[address_b];
-				const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
-				const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
-				const blockSinceParticipatingDiff =
-					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-					walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
-				return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
-			});
+		/**
+		 * apply tiebreakers:
+		 * - by total upload volume
+		 * - by total tips sent
+		 * - by block since participating (i.e. has reached the minimum weekly data)
+		 */
+		const shuffledTies = groupEffortParticipants.sort((address_a, address_b) => {
+			const walletStat_a = this.data.wallets[address_a];
+			const walletStat_b = this.data.wallets[address_b];
+			const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
+			const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
+			const blockSinceParticipatingDiff =
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+				walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
+			return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
+		});
 
-			shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
+		shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
 
-			const top50 = shuffledTies.slice(0, 49);
+		const top50 = shuffledTies.slice(0, 49);
 
-			this.data.ranks.daily.groupEffortRewards = top50.map((address, index) => {
-				return { address, rewards: GROUP_EFFORT_REWARDS[index] };
-			});
-		}
+		const top50Data = top50.map((address, index) => {
+			return { address, rewards: GROUP_EFFORT_REWARDS[index], rankPosition: index + 1 };
+		});
+
+		const otherParticipantsData = otherParticipants.map((address) => {
+			return { address, rewards: 0, rankPosition: 0 };
+		});
+
+		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);

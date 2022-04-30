@@ -3,6 +3,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { DailyOutput } from './daily_output';
 import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './queries';
+import { getBlockHeight, getMinBlockHeigh } from './common';
 
 /**
  * A Python-like approach to determine if the JS code is running this exact module, and not being imported
@@ -27,12 +28,10 @@ function run(): void {
 					describe: 'The block from where to start the query',
 					type: 'number'
 				})
-				.demandOption('minBlock')
 				.positional('maxBlock', {
 					describe: 'The last block to query',
 					type: 'number'
-				})
-				.demandOption('maxBlock');
+				});
 		},
 		(argv) => {
 			const { minBlock, maxBlock } = argv;
@@ -48,11 +47,14 @@ function run(): void {
  * @param minBlock an integer representing the block from where to query the data
  * @param maxBlock an integer representing the block until where to query the data
  */
-async function aggregateOutputData(minBlock: number, maxBlock: number): Promise<void> {
-	const output = new DailyOutput([minBlock, maxBlock]);
+async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promise<void> {
+	const minimumBlock = minBlock ?? getMinBlockHeigh();
+	const maximumBlock = maxBlock ?? (await getBlockHeight());
+
+	const output = new DailyOutput([minimumBlock, maximumBlock]);
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
-	const edges = await getAllArDriveTransactionsWithin(minBlock, maxBlock);
+	const edges = await getAllArDriveTransactionsWithin(minimumBlock, maximumBlock);
 	await output.feedGQLData(edges);
 	output.write();
 }
