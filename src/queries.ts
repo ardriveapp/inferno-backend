@@ -1,33 +1,30 @@
-import { GQLEdgeInterface, GQLTransactionsResultInterface } from 'ardrive-core-js';
-import fetch from 'node-fetch';
+import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
+import Axios from 'axios';
+import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
+import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
+import { writeFileSync } from 'fs';
+import { getBlockHeight, gqlResultName } from './common';
 
-const GQL_URL = 'https://arweave.net/graphql';
-const ITEMS_PER_REQUEST = 100;
-const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync'] as const;
+const initialErrorDelayMS = 1000;
 
-const BLOCKS_PER_MONTH = 21600;
-
-interface Query {
-	query: string;
-}
-
-export interface StakedPSTHolders {
-	[address: string]: number;
-}
-
-export function getWaleltsEligibleForStreak(): Promise<StakedPSTHolders> {
+/**
+ * Filters the result of getStakedPSTHolders in order to get the holders that staked at least ↁ200
+ * @returns {Promise<StakedPSTHolders>}
+ */
+export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
 	return getStakedPSTHolders()
 		.then((result) => Object.entries(result))
 		.then((entries) => entries.filter((data) => data[1] >= 200))
 		.then((entries) => Object.fromEntries(entries));
 }
 
+/**
+ * Queries for all PST holders that staked tokens for at least 21600 blocks
+ * @returns {Promise<StakedPSTHolders>}
+ */
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
-	const blockHeightRequest = await fetch('https://arweave.net/height');
-	const blockHeightBlob = await blockHeightRequest.blob();
-	const blockHeightText = await blockHeightBlob.text();
-	const blockHeight = +blockHeightText;
+	const blockHeight = await getBlockHeight();
 	const communityOracle = new ArDriveCommunityOracle();
 	const vault = await communityOracle.getArdriveVaults();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
@@ -47,43 +44,103 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	return Object.fromEntries(stakedForAtLeastOneMonth);
 }
 
-export async function getAllTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
+/**
+ * Queries GQL for all ArDrive transactions within a range of blocks
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
+ */
+export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
 	const allEdges: GQLEdgeInterface[] = [];
+
+	const blockHeight = await getBlockHeight();
+	const trustedHeight = blockHeight - 50;
+
 	let hasNextPage = true;
+	let prevBlock = minBlock - 1;
 
 	while (hasNextPage) {
-		const query = createQuery(minBlock, maxBlock);
+		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight));
 		const response = await sendQuery(query);
-		allEdges.push(...response.edges);
-		hasNextPage = response.pageInfo.hasNextPage;
+		if (response.edges.length) {
+			console.log(`Transactions count: ${response.edges.length}`);
+			const mostRecentTransaction = response.edges[response.edges.length - 1];
+			const height = mostRecentTransaction.node.block.height;
+			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
+			prevBlock = height;
+			allEdges.push(...response.edges);
+			hasNextPage = response.pageInfo.hasNextPage;
+			console.log(`Query has next page: ${hasNextPage}`);
+		} else {
+			console.log(`Ignoring empty GQL response`);
+			hasNextPage = false;
+		}
 	}
 
 	return allEdges;
 }
 
+/**
+ * Runs the given GQL query
+ * @param query the query object
+ * @throws if the GW returns a syntax error
+ * @returns {GQLTransactionsResultInterface} the returned transactions
+ */
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
 	// TODO: implement retry here
-	const response = await fetch(GQL_URL, {
-		method: 'POST',
-		headers: {
-			'Accept-Encoding': 'gzip, deflate, br',
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-			Connection: 'keep-alive',
-			DNT: '1',
-			Origin: GQL_URL
-		},
-		body: JSON.stringify(query)
-	});
-	const JSONBody = await response.json();
-	const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
-	if (errors) {
-		console.log(`Error in query: \n${JSON.stringify(query, null, 4)}`);
-		throw new Error(errors.message);
+	let pendingRetries = MAX_RETRIES;
+	let responseOk: boolean | undefined;
+
+	while (!responseOk && pendingRetries >= 0) {
+		if (pendingRetries !== MAX_RETRIES) {
+			const currentRetry = MAX_RETRIES - pendingRetries;
+			await exponentialBackOffAfterFailedRequest(currentRetry);
+		}
+
+		const response = await Axios.request({
+			method: 'POST',
+			url: GQL_URL,
+			headers: {
+				'Accept-Encoding': 'gzip, deflate, br',
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				Connection: 'keep-alive',
+				DNT: '1',
+				Origin: GQL_URL
+			},
+			data: JSON.stringify(query)
+		});
+		responseOk = response.status >= 200 && response.status < 300;
+
+		try {
+			const JSONBody = response.data;
+			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
+			if (errors) {
+				pendingRetries--;
+				console.log(`Retrying (${pendingRetries}). ${JSON.stringify(errors)}`);
+				continue;
+			}
+			return JSONBody.data.transactions as GQLTransactionsResultInterface;
+		} catch (e) {
+			pendingRetries--;
+			console.log(`Retrying (${pendingRetries}). ${JSON.stringify(e)}`);
+			continue;
+		}
 	}
-	return JSONBody.data.transactions as GQLTransactionsResultInterface;
+	throw new Error(`Retries on the query failed!`);
 }
 
+async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promise<void> {
+	const delay = Math.pow(2, retryNumber) * initialErrorDelayMS;
+	await new Promise((res) => setTimeout(res, delay));
+}
+
+/**
+ * Returns a query object to match all ArDrive transactions within a range of blocks
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ * @returns
+ */
 function createQuery(minBlock: number, maxBlock: number): Query {
 	return {
 		query: `
@@ -97,6 +154,7 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
 						}
 					]
+					sort: HEIGHT_ASC
 				) {
 					pageInfo {
 						hasNextPage
@@ -121,6 +179,10 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							}
 							quantity {
 								winston
+							}
+							block {
+								timestamp
+								height
 							}
 						}
 					}

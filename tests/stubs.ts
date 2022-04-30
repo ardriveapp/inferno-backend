@@ -1,5 +1,5 @@
 import Arweave from 'arweave';
-import { ADDR, ArweaveAddress, TxID } from 'ardrive-core-js';
+import { ADDR, ArweaveAddress, TxID } from '../src/types';
 
 export const fakeArweave = Arweave.init({
 	host: 'localhost',

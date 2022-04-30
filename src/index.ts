@@ -1,16 +1,60 @@
-// import { getAllTransactionsWithin } from './queries';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
-import { getWaleltsEligibleForStreak } from './queries';
+import { DailyOutput } from './daily_output';
+import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './queries';
+import { getBlockHeight, getMinBlockHeigh } from './common';
 
-// const minBlock = 916705;
-// const maxBlock = 916756;
-
+/**
+ * A Python-like approach to determine if the JS code is running this exact module, and not being imported
+ * 🐍🐍🐍
+ */
 if (require.main === module) {
-	console.log('TESTING');
+	run();
+} else {
+	throw new Error('This module should not be imported');
+}
 
-	// getAllTransactionsWithin(minBlock, maxBlock).then((edges) => {
-	// 	console.log(JSON.stringify(edges, null, 4));
-	// });
+/**
+ * The main method. It handles the CLI commands and parameters
+ */
+function run(): void {
+	yargs(hideBin(process.argv)).command(
+		'aggregate [minBlock] [maxBlock]',
+		'Aggregates data into the output file',
+		(yargs) => {
+			return yargs
+				.positional('minBlock', {
+					describe: 'The block from where to start the query',
+					type: 'number'
+				})
+				.positional('maxBlock', {
+					describe: 'The last block to query',
+					type: 'number'
+				});
+		},
+		(argv) => {
+			const { minBlock, maxBlock } = argv;
+			aggregateOutputData(minBlock, maxBlock);
+		}
+	);
 
-	getWaleltsEligibleForStreak().then((result) => console.log('Staked tokens:\n', JSON.stringify(result, null, 4)));
+	yargs.parse();
+}
+
+/**
+ * The method that runs the data aggregation algorithm
+ * @param minBlock an integer representing the block from where to query the data
+ * @param maxBlock an integer representing the block until where to query the data
+ */
+async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promise<void> {
+	const minimumBlock = minBlock ?? getMinBlockHeigh();
+	const maximumBlock = maxBlock ?? (await getBlockHeight());
+
+	const output = new DailyOutput([minimumBlock, maximumBlock]);
+	const PSTHolders = await getWalletsEligibleForStreak();
+	await output.feedPSTHolders(PSTHolders);
+	const edges = await getAllArDriveTransactionsWithin(minimumBlock, maximumBlock);
+	await output.feedGQLData(edges);
+	output.write();
 }
