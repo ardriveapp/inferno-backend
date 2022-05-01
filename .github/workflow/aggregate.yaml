@@ -28,9 +28,6 @@ jobs:
       - name: Write wallet
         run: echo -n '${{ secrets.WALLET_FILE }}' | base64 --decode > /tmp/wallet
 
-      - name: Lint
-        run: yarn lint
-
       - name: Build
         run: yarn build
 
