@@ -2,8 +2,9 @@
 name: Aggregate daily data
 on: 
   schedule:
-    # at 12AM, 6AM, 12PM, and  6PM
-    - cron '0 0/6 * * *'
+    # at 4AM, 10AM, 4PM, and  10PM UTC
+    # at 12AM, 6AM, 12PM, and  6PM EST
+    - cron '0 4/6 * * *'
 
 jobs:
   test-and-build:
