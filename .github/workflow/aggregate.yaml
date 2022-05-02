@@ -10,6 +10,15 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Recover the previous non unbundled bundles
+        id: get_persistent_value
+        uses: aaimio/get-persistent-value@v1.1.2
+        with:
+          key: NON_UNBUNDLED_TX_IDS
+          access_token: ${{ secrets.PERSISTENT_VALUE_ACCESS_TOKEN }}
+        run: |
+          echo ${{ steps.get_persistent_value.outputs.value }} > non_unbundled_bundles.json
+    
       - uses: actions/checkout@v3
       - name: Set NodeJS version
         id: node_version
@@ -40,3 +49,16 @@ jobs:
 
       - name: Publish output
         run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert --dry-run
+
+      - name: Read non unbundled bundles
+        run: export NON_UNBUNDLED=`cat non_unbundled_bundles.json`
+
+      - name: Persist non unbundled bundles
+        id: set_persistent_value
+        uses: aaimio/get-persistent-value@v1.1.2
+        with:
+          key: NON_UNBUNDLED_TX_IDS
+          value: ${NON_UNBUNDLED}
+          access_token: ${{ secrets.PERSISTENT_VALUE_ACCESS_TOKEN }}
+        run: |
+          echo ${{ steps.get_persistent_value.outputs.value }} > non_unbundled_bundles.json

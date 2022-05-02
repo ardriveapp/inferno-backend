@@ -80,6 +80,34 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 	return allEdges;
 }
 
+export async function getBundledTransactions(txIds: string[]): Promise<GQLEdgeInterface[]> {
+	const allEdges: GQLEdgeInterface[] = [];
+
+	// const blockHeight = await getBlockHeight();
+
+	let hasNextPage = true;
+
+	while (hasNextPage) {
+		const query = createBundledTxsQuery(txIds);
+		const response = await sendQuery(query);
+		if (response.edges.length) {
+			console.log(`Transactions count: ${response.edges.length}`);
+			// const mostRecentTransaction = response.edges[response.edges.length - 1];
+			// const height = mostRecentTransaction.node.block.height;
+			// writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
+			// prevBlock = height;
+			allEdges.push(...response.edges);
+			hasNextPage = response.pageInfo.hasNextPage;
+			console.log(`Query has next page: ${hasNextPage}`);
+		} else {
+			console.log(`Ignoring empty GQL response`);
+			hasNextPage = false;
+		}
+	}
+
+	return allEdges;
+}
+
 /**
  * Runs the given GQL query
  * @param query the query object
@@ -154,6 +182,59 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
 						}
 					]
+					sort: HEIGHT_ASC
+				) {
+					pageInfo {
+						hasNextPage
+					}
+					edges {
+						cursor
+						node {
+							id
+							owner {
+								address
+							}
+							bundledIn {
+								id
+							}
+							tags {
+								name
+								value
+							}
+							data {
+								size
+								type
+							}
+							quantity {
+								winston
+							}
+							block {
+								timestamp
+								height
+							}
+						}
+					}
+				}
+			}`
+	};
+}
+
+/**
+ */
+function createBundledTxsQuery(txIDs: string[]): Query {
+	// FIXME: use minBlock & maxBlock
+	return {
+		query: `
+			query {
+				transactions(
+					first: ${ITEMS_PER_REQUEST}
+					tags: [
+						{
+							name: "App-Name"
+							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
+						}
+					]
+					bundledIn: [${txIDs.map((txId) => `"${txId}"`)}]
 					sort: HEIGHT_ASC
 				) {
 					pageInfo {

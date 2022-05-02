@@ -9,6 +9,7 @@ import {
 } from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
+import { getBundledTransactions } from './queries';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
@@ -19,7 +20,9 @@ export class DailyOutput {
 	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: number } = {};
-	private bundlesToVerify: { [txId: string]: { walletAddress: string; fileSize: number }[] } = {};
+	private pendingSizeSumsOfUnverifiedBundleTips: { [txId: string]: { walletAddress: string; fileSize: number }[] } =
+		{};
+	private unbundledBundleTxIDs: string[] = [];
 
 	constructor(private heightRange: [number, number]) {}
 
@@ -67,12 +70,27 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
+		// check for previous unbundled bundles
+		const prevNonUnbundledBundles: string[] = existsSync('non_unbundled_bundles.json')
+			? JSON.parse(readFileSync('non_unbundled_bundles.json').toString())
+			: [];
+		const unbundledTransactions = prevNonUnbundledBundles.length
+			? await getBundledTransactions(prevNonUnbundledBundles)
+			: [];
+		unbundledTransactions.forEach(this.aggregateData);
+
+		// calculate this run's non unbubdled bundles
+		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips).filter(
+			(bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId)
+		);
+		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
+		writeFileSync('non_unbundled_bundles.json', JSON.stringify(nonUnbundledBundlesWithTip));
+
+		// calculate change in percentage of the uploaded data and rank position
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
 		const addresses = Object.keys(this.data.wallets);
-
-		// calculate change in percentage of the uploaded data and rank position
 		addresses.forEach((address) => {
 			// daily change
 			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
@@ -252,12 +270,21 @@ export class DailyOutput {
 
 		if (isNewDay) {
 			console.log(`Counting new day: ${queryDate.getDate()}, prev: ${previousDate.getDate()}`);
+			console.log(`#: ${queryDate.getTime()}, prev: ${previousDate.getTime()}`);
 			this.resetDay();
 		}
 
 		if (isNewWeek) {
 			console.log(`Counting new week: ${queryDate.getDay()}, prev: ${previousDate.getDay()}`);
+			console.log(`#: ${queryDate.getTime()}, prev: ${previousDate.getTime()}`);
 			this.resetWeek();
+		}
+
+		// track unbundled bundles
+		if (bundledIn) {
+			if (this.unbundledBundleTxIDs.indexOf(bundledIn) === -1) {
+				this.unbundledBundleTxIDs.push(bundledIn);
+			}
 		}
 
 		if (isMetadataTransaction) {
@@ -271,7 +298,10 @@ export class DailyOutput {
 			this.bundlesTips[txId] = tip;
 			let unverified;
 
-			while (this.bundlesToVerify[txId] && (unverified = this.bundlesToVerify[txId].pop())) {
+			while (
+				this.pendingSizeSumsOfUnverifiedBundleTips[txId] &&
+				(unverified = this.pendingSizeSumsOfUnverifiedBundleTips[txId].pop())
+			) {
 				// console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
 				const dataSize = unverified.fileSize;
 				this.sumSize(ownerAddress, dataSize);
@@ -294,10 +324,10 @@ export class DailyOutput {
 				if (isBundledTransaction) {
 					const isTipPresent = this.bundlesTips[bundledIn];
 					if (isTipPresent === undefined) {
-						if (!this.bundlesToVerify[bundledIn]) {
-							this.bundlesToVerify[bundledIn] = [];
+						if (!this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn]) {
+							this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn] = [];
 						}
-						this.bundlesToVerify[bundledIn].push({
+						this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn].push({
 							walletAddress: ownerAddress,
 							fileSize: dataSize
 						});
