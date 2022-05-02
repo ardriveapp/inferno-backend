@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
+import { getLastTimestamp } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -16,7 +17,7 @@ export class DailyOutput {
 	private readonly previousData = this.read();
 	private data = this.read();
 	private latestBlock = 0;
-	private latestTimestamp = 0;
+	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: number } = {};
 	private bundlesToVerify: { [txId: string]: { walletAddress: string; fileSize: number }[] } = {};
 
@@ -217,7 +218,7 @@ export class DailyOutput {
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
 
-		const previousTimestamp = this.latestTimestamp;
+		const previousTimestamp = this.latestTimestamp * 1000;
 		const previousBlockHeight = this.previousData.blockHeight;
 		const previousDate = new Date(previousTimestamp);
 
@@ -227,7 +228,7 @@ export class DailyOutput {
 			throw new Error('That block was already processed!');
 		}
 
-		const queryTimestamp = edge.node.block.timestamp;
+		const queryTimestamp = edge.node.block.timestamp * 1000;
 		const queryDate = new Date(queryTimestamp);
 
 		const isNewDay = previousDate.getDate() !== queryDate.getDate();
