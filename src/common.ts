@@ -32,5 +32,5 @@ export function getLastTimestamp(): number {
 	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
 
 	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
-	return file.timestamp + 1;
+	return file.timestamp;
 }
