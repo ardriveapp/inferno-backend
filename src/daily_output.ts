@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { getLastTimestamp } from './common';
+import { getLastTimestamp, tiebreakerSortFactory as weeklyTiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -109,16 +109,7 @@ export class DailyOutput {
 		 * - by total tips sent
 		 * - by block since participating (i.e. has reached the minimum weekly data)
 		 */
-		const shuffledTies = groupEffortParticipants.sort((address_a, address_b) => {
-			const walletStat_a = this.data.wallets[address_a];
-			const walletStat_b = this.data.wallets[address_b];
-			const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
-			const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
-			const blockSinceParticipatingDiff =
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
-			return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
-		});
+		const shuffledTies = groupEffortParticipants.sort(weeklyTiebreakerSortFactory(this.data.wallets));
 
 		shuffledTies.forEach((address, index) => {
 			this.data.wallets[address].daily.rankPosition = index + 1;
@@ -131,12 +122,16 @@ export class DailyOutput {
 			return { address, rewards: GROUP_EFFORT_REWARDS[index], rankPosition: index + 1 };
 		});
 
-		const otherParticipantsData = otherParticipants.map((address) => {
-			return { address, rewards: 0, rankPosition: 0 };
-		});
+		const otherParticipantsData = otherParticipants
+			.sort(weeklyTiebreakerSortFactory(this.data.wallets))
+			.map((address) => {
+				return { address, rewards: 0, rankPosition: 0 };
+			});
 
 		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
 		this.data.ranks.weekly.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+
+		// TODO: determine total ranking
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
