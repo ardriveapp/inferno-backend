@@ -120,7 +120,10 @@ export class DailyOutput {
 			return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
 		});
 
-		shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
+		shuffledTies.forEach((address, index) => {
+			this.data.wallets[address].daily.rankPosition = index + 1;
+			this.data.wallets[address].weekly.rankPosition = index + 1;
+		});
 
 		const top50 = shuffledTies.slice(0, 49);
 
@@ -133,6 +136,7 @@ export class DailyOutput {
 		});
 
 		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+		this.data.ranks.weekly.groupEffortRewards = [...top50Data, ...otherParticipantsData];
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -192,6 +196,18 @@ export class DailyOutput {
 				tips: 0
 			};
 			this.data.ranks.lastWeek = this.data.ranks.weekly;
+			// updates the total rewards ok week change
+			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
+					({ address: addr }) => addr === address
+				);
+				if (prevTotal) {
+					const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+					this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
+				} else {
+					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+				}
+			});
 			this.data.ranks.weekly = {
 				hasReachedMinimumGroupEffort: false,
 				groupEffortRewards: [],
