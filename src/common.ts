@@ -17,7 +17,7 @@ export async function getBlockHeight(): Promise<number> {
 	return (_cachedBlockHeight = blockHeight);
 }
 
-export function getMinBlockHeigh(): number {
+export function getMinBlockHeight(): number {
 	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
 
 	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
