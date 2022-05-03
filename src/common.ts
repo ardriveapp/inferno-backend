@@ -36,6 +36,12 @@ export function getLastTimestamp(): number {
 	return file.timestamp;
 }
 
+/**
+ * A factory function that returns the sort algorithm to apply the following tiebreakers:
+ * - by total upload volume
+ * - by total tips sent
+ * - by block since participating (i.e. has reached the minimum weekly data)
+ */
 export function tiebreakerSortFactory(timeframe: 'weekly' | 'total', walletsStats: WalletsStats) {
 	return (address_a: string, address_b: string): number => {
 		const walletStat_a = walletsStats[address_a];

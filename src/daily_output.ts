@@ -103,12 +103,6 @@ export class DailyOutput {
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
-		/**
-		 * apply tiebreakers:
-		 * - by total upload volume
-		 * - by total tips sent
-		 * - by block since participating (i.e. has reached the minimum weekly data)
-		 */
 		const shuffledTies = groupEffortParticipants.sort(tiebreakerSortFactory('weekly', this.data.wallets));
 
 		shuffledTies.forEach((address, index) => {
