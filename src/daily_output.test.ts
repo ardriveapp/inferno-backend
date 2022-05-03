@@ -81,6 +81,12 @@ describe('DailyOutput class', () => {
 			}
 		});
 
+		after(() => {
+			if (existsSync(OUTPUT_NAME)) {
+				rmSync(OUTPUT_NAME);
+			}
+		});
+
 		it('return the template if the file is not present', () => {
 			expect(output.readOutputFile).to.throw();
 			expect(output.read()).to.deep.equal({

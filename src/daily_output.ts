@@ -1,13 +1,16 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
+	NON_UNBUNDLED_BUNDLES_NAME,
 	ONE_THOUSAND_MB,
 	OUTPUT_NAME,
 	OUTPUT_TEMPLATE_NAME
 } from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
+import { getBundledTransactions } from './queries';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
@@ -16,9 +19,11 @@ export class DailyOutput {
 	private readonly previousData = this.read();
 	private data = this.read();
 	private latestBlock = 0;
-	private latestTimestamp = 0;
+	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: number } = {};
-	private bundlesToVerify: { [txId: string]: { walletAddress: string; fileSize: number }[] } = {};
+	private pendingSizeSumsOfUnverifiedBundleTips: { [txId: string]: { walletAddress: string; fileSize: number }[] } =
+		{};
+	private unbundledBundleTxIDs: string[] = [];
 
 	constructor(private heightRange: [number, number]) {}
 
@@ -32,7 +37,6 @@ export class DailyOutput {
 			try {
 				return this.readOutputFile();
 			} catch (err) {
-				console.info(`The output file hasn't yet been created. Using the file template`);
 				return this.readTemplate();
 			}
 		})();
@@ -66,12 +70,36 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
+		// check for previous unbundled bundles
+		const prevNonUnbundledBundles: { txId: string; tip: number }[] = existsSync(NON_UNBUNDLED_BUNDLES_NAME)
+			? JSON.parse(readFileSync(NON_UNBUNDLED_BUNDLES_NAME).toString())
+			: [];
+		const unbundledTransactions = prevNonUnbundledBundles.length
+			? await getBundledTransactions(prevNonUnbundledBundles.map(({ txId }) => txId))
+			: [];
+		// track the tips of the bundles yet not unbundled at the previous run
+		prevNonUnbundledBundles.forEach(({ tip, txId }) => {
+			this.bundlesTips[txId] = tip;
+		});
+		unbundledTransactions.forEach(this.aggregateData);
+
+		// calculate this run's non unbundled bundles
+		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips)
+			.filter((bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId))
+			.map((txId) => {
+				return {
+					txId,
+					tip: this.bundlesTips[txId]
+				};
+			});
+		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
+		writeFileSync(NON_UNBUNDLED_BUNDLES_NAME, JSON.stringify(nonUnbundledBundlesWithTip));
+
+		// calculate change in percentage of the uploaded data and rank position
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
 		const addresses = Object.keys(this.data.wallets);
-
-		// calculate change in percentage of the uploaded data and rank position
 		addresses.forEach((address) => {
 			// daily change
 			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
@@ -102,24 +130,12 @@ export class DailyOutput {
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
-		/**
-		 * apply tiebreakers:
-		 * - by total upload volume
-		 * - by total tips sent
-		 * - by block since participating (i.e. has reached the minimum weekly data)
-		 */
-		const shuffledTies = groupEffortParticipants.sort((address_a, address_b) => {
-			const walletStat_a = this.data.wallets[address_a];
-			const walletStat_b = this.data.wallets[address_b];
-			const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
-			const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
-			const blockSinceParticipatingDiff =
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
-			return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
-		});
+		const shuffledTies = groupEffortParticipants.sort(tiebreakerSortFactory('weekly', this.data.wallets));
 
-		shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
+		shuffledTies.forEach((address, index) => {
+			this.data.wallets[address].daily.rankPosition = index + 1;
+			this.data.wallets[address].weekly.rankPosition = index + 1;
+		});
 
 		const top50 = shuffledTies.slice(0, 49);
 
@@ -127,11 +143,16 @@ export class DailyOutput {
 			return { address, rewards: GROUP_EFFORT_REWARDS[index], rankPosition: index + 1 };
 		});
 
-		const otherParticipantsData = otherParticipants.map((address) => {
-			return { address, rewards: 0, rankPosition: 0 };
-		});
+		const otherParticipantsData = otherParticipants
+			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
+			.map((address) => {
+				return { address, rewards: 0, rankPosition: 0 };
+			});
 
 		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+		this.data.ranks.weekly.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+
+		// TODO: determine total ranking
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -191,6 +212,23 @@ export class DailyOutput {
 				tips: 0
 			};
 			this.data.ranks.lastWeek = this.data.ranks.weekly;
+			// updates the total rewards on week change
+			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
+					({ address: addr }) => addr === address
+				);
+				if (prevTotal) {
+					const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+					this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
+				} else {
+					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+				}
+			});
+			this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
+				.sort(({ address: address_1 }, { address: address_2 }) =>
+					tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
+				)
+				.map(({ address, rewards }, index) => ({ address, rewards, rankPosition: index + 1 }));
 			this.data.ranks.weekly = {
 				hasReachedMinimumGroupEffort: false,
 				groupEffortRewards: [],
@@ -217,7 +255,7 @@ export class DailyOutput {
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
 
-		const previousTimestamp = this.latestTimestamp;
+		const previousTimestamp = this.latestTimestamp * 1000;
 		const previousBlockHeight = this.previousData.blockHeight;
 		const previousDate = new Date(previousTimestamp);
 
@@ -227,40 +265,43 @@ export class DailyOutput {
 			throw new Error('That block was already processed!');
 		}
 
-		const queryTimestamp = edge.node.block.timestamp;
+		const queryTimestamp = edge.node.block.timestamp * 1000;
 		const queryDate = new Date(queryTimestamp);
 
 		if (this.isNewESTDate(previousDate, queryDate)) {
-			console.log(`Counting new day: ${queryDate.getDate()}, prev: ${previousDate.getDate()}`);
 			this.resetDay();
 		}
 
 		if (this.isNewESTWeek(previousDate, queryDate)) {
-			console.log(`Counting new week: ${queryDate.getDay()}, prev: ${previousDate.getDay()}`);
 			this.resetWeek();
+		}
+
+		// track unbundled bundles
+		if (bundledIn) {
+			if (this.unbundledBundleTxIDs.indexOf(bundledIn) === -1) {
+				this.unbundledBundleTxIDs.push(bundledIn);
+			}
 		}
 
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
-				// console.log(`Found file metadata transaction: ${txId}`);
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			// console.log(`Found bundle transaction: ${txId}`);
 			this.bundlesTips[txId] = tip;
 			let unverified;
 
-			while (this.bundlesToVerify[txId] && (unverified = this.bundlesToVerify[txId].pop())) {
-				// console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
+			while (
+				this.pendingSizeSumsOfUnverifiedBundleTips[txId] &&
+				(unverified = this.pendingSizeSumsOfUnverifiedBundleTips[txId].pop())
+			) {
 				const dataSize = unverified.fileSize;
 				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, tip);
 			}
 		} else {
 			// it is file data transaction
-
-			// console.log(`Found file data transaction ${txId}`);
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -274,10 +315,10 @@ export class DailyOutput {
 				if (isBundledTransaction) {
 					const isTipPresent = this.bundlesTips[bundledIn];
 					if (isTipPresent === undefined) {
-						if (!this.bundlesToVerify[bundledIn]) {
-							this.bundlesToVerify[bundledIn] = [];
+						if (!this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn]) {
+							this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn] = [];
 						}
-						this.bundlesToVerify[bundledIn].push({
+						this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn].push({
 							walletAddress: ownerAddress,
 							fileSize: dataSize
 						});
@@ -286,18 +327,14 @@ export class DailyOutput {
 					}
 					if (!isTipPresent) {
 						// Discard bundled transactions without a tip
-						console.log(`Discarding bundled transaction with no tip: ${txId}`);
 						return;
 					}
 					tip = this.bundlesTips[bundledIn];
 				} else {
 					// Discards V2 transactions without a tip
-					console.log(`Discarding V2 transaction with no tip: ${txId}`);
 					return;
 				}
 			}
-
-			// console.log(`Summing up file data transaction: ${txId}`);
 
 			this.sumSize(ownerAddress, dataSize);
 			this.sumTip(ownerAddress, tip);
@@ -400,7 +437,6 @@ export class DailyOutput {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
 		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
-		console.log(`Output saved at ${OUTPUT_NAME}`);
 	}
 
 	/**

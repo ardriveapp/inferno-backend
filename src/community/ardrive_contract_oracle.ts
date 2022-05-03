@@ -49,7 +49,6 @@ export class ArDriveContractOracle implements ContractOracle {
 				// Get contract with current contract reader's readContract implementation
 				contract = await this.contractReaders[currentContractReader].readContract(txId);
 			} catch (error) {
-				console.error(`Contract could not be fetched: ${error}`);
 				readContractAttempts++;
 
 				if (readContractAttempts >= maxReadContractAttempts) {
@@ -65,10 +64,6 @@ export class ArDriveContractOracle implements ContractOracle {
 					const nextContractReaderIndex = currentContractReader + 1;
 					readContractAttempts = initialContractAttempts;
 					currentContractReader = nextContractReaderIndex;
-
-					console.log('Falling back to next contract reader..');
-				} else {
-					console.log('Retrying with current contract reader..');
 				}
 			}
 		}
