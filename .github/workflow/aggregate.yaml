@@ -31,7 +31,6 @@ jobs:
       - name: Build
         run: yarn build
 
-
       - name: Fetch previous output
         run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 
@@ -40,9 +39,6 @@ jobs:
 
       - name: Publish output
         run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert --dry-run
-
-      - name: Read non unbundled bundles
-        run: export NON_UNBUNDLED=`cat non_unbundled_bundles.json`
 
       - name: Persist non unbundled bundles
         run: |
