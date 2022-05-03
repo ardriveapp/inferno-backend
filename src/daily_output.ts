@@ -3,6 +3,7 @@ import { getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
+	NON_UNBUNDLED_BUNDLES_NAME,
 	ONE_THOUSAND_MB,
 	OUTPUT_NAME,
 	OUTPUT_TEMPLATE_NAME
@@ -70,8 +71,8 @@ export class DailyOutput {
 	 */
 	private async finishDataAggregation(): Promise<void> {
 		// check for previous unbundled bundles
-		const prevNonUnbundledBundles: { txId: string; tip: number }[] = existsSync('non_unbundled_bundles.json')
-			? JSON.parse(readFileSync('non_unbundled_bundles.json').toString())
+		const prevNonUnbundledBundles: { txId: string; tip: number }[] = existsSync(NON_UNBUNDLED_BUNDLES_NAME)
+			? JSON.parse(readFileSync(NON_UNBUNDLED_BUNDLES_NAME).toString())
 			: [];
 		const unbundledTransactions = prevNonUnbundledBundles.length
 			? await getBundledTransactions(prevNonUnbundledBundles.map(({ txId }) => txId))
@@ -92,7 +93,7 @@ export class DailyOutput {
 				};
 			});
 		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
-		writeFileSync('non_unbundled_bundles.json', JSON.stringify(nonUnbundledBundlesWithTip));
+		writeFileSync(NON_UNBUNDLED_BUNDLES_NAME, JSON.stringify(nonUnbundledBundlesWithTip));
 
 		// calculate change in percentage of the uploaded data and rank position
 		this.data.blockHeight = this.heightRange[1];
