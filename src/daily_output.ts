@@ -1,14 +1,16 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
+	NON_UNBUNDLED_BUNDLES_NAME,
 	ONE_THOUSAND_MB,
 	OUTPUT_NAME,
 	OUTPUT_TEMPLATE_NAME
 } from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
+import { getBundledTransactions } from './queries';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
@@ -19,7 +21,9 @@ export class DailyOutput {
 	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: number } = {};
-	private bundlesToVerify: { [txId: string]: { walletAddress: string; fileSize: number }[] } = {};
+	private pendingSizeSumsOfUnverifiedBundleTips: { [txId: string]: { walletAddress: string; fileSize: number }[] } =
+		{};
+	private unbundledBundleTxIDs: string[] = [];
 
 	constructor(private heightRange: [number, number]) {}
 
@@ -33,7 +37,6 @@ export class DailyOutput {
 			try {
 				return this.readOutputFile();
 			} catch (err) {
-				console.info(`The output file hasn't yet been created. Using the file template`);
 				return this.readTemplate();
 			}
 		})();
@@ -53,9 +56,9 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public feedGQLData(queryResult: GQLEdgeInterface[]): void {
+	public feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
 		queryResult.forEach(this.aggregateData);
-		this.finishDataAggregation();
+		return this.finishDataAggregation();
 	}
 
 	/**
@@ -66,13 +69,37 @@ export class DailyOutput {
 	 * - group effort rewards, and
 	 * - streak rewards
 	 */
-	private finishDataAggregation(): void {
+	private async finishDataAggregation(): Promise<void> {
+		// check for previous unbundled bundles
+		const prevNonUnbundledBundles: { txId: string; tip: number }[] = existsSync(NON_UNBUNDLED_BUNDLES_NAME)
+			? JSON.parse(readFileSync(NON_UNBUNDLED_BUNDLES_NAME).toString())
+			: [];
+		const unbundledTransactions = prevNonUnbundledBundles.length
+			? await getBundledTransactions(prevNonUnbundledBundles.map(({ txId }) => txId))
+			: [];
+		// track the tips of the bundles yet not unbundled at the previous run
+		prevNonUnbundledBundles.forEach(({ tip, txId }) => {
+			this.bundlesTips[txId] = tip;
+		});
+		unbundledTransactions.forEach(this.aggregateData);
+
+		// calculate this run's non unbundled bundles
+		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips)
+			.filter((bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId))
+			.map((txId) => {
+				return {
+					txId,
+					tip: this.bundlesTips[txId]
+				};
+			});
+		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
+		writeFileSync(NON_UNBUNDLED_BUNDLES_NAME, JSON.stringify(nonUnbundledBundlesWithTip));
+
+		// calculate change in percentage of the uploaded data and rank position
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
 		const addresses = Object.keys(this.data.wallets);
-
-		// calculate change in percentage of the uploaded data and rank position
 		addresses.forEach((address) => {
 			// daily change
 			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
@@ -245,36 +272,39 @@ export class DailyOutput {
 		const isNewWeek = previousDate.getDay() !== queryDate.getDay();
 
 		if (isNewDay) {
-			console.log(`Counting new day: ${queryDate.getDate()}, prev: ${previousDate.getDate()}`);
 			this.resetDay();
 		}
 
 		if (isNewWeek) {
-			console.log(`Counting new week: ${queryDate.getDay()}, prev: ${previousDate.getDay()}`);
 			this.resetWeek();
+		}
+
+		// track unbundled bundles
+		if (bundledIn) {
+			if (this.unbundledBundleTxIDs.indexOf(bundledIn) === -1) {
+				this.unbundledBundleTxIDs.push(bundledIn);
+			}
 		}
 
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
-				// console.log(`Found file metadata transaction: ${txId}`);
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			// console.log(`Found bundle transaction: ${txId}`);
 			this.bundlesTips[txId] = tip;
 			let unverified;
 
-			while (this.bundlesToVerify[txId] && (unverified = this.bundlesToVerify[txId].pop())) {
-				// console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
+			while (
+				this.pendingSizeSumsOfUnverifiedBundleTips[txId] &&
+				(unverified = this.pendingSizeSumsOfUnverifiedBundleTips[txId].pop())
+			) {
 				const dataSize = unverified.fileSize;
 				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, tip);
 			}
 		} else {
 			// it is file data transaction
-
-			// console.log(`Found file data transaction ${txId}`);
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -288,10 +318,10 @@ export class DailyOutput {
 				if (isBundledTransaction) {
 					const isTipPresent = this.bundlesTips[bundledIn];
 					if (isTipPresent === undefined) {
-						if (!this.bundlesToVerify[bundledIn]) {
-							this.bundlesToVerify[bundledIn] = [];
+						if (!this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn]) {
+							this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn] = [];
 						}
-						this.bundlesToVerify[bundledIn].push({
+						this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn].push({
 							walletAddress: ownerAddress,
 							fileSize: dataSize
 						});
@@ -300,18 +330,14 @@ export class DailyOutput {
 					}
 					if (!isTipPresent) {
 						// Discard bundled transactions without a tip
-						console.log(`Discarding bundled transaction with no tip: ${txId}`);
 						return;
 					}
 					tip = this.bundlesTips[bundledIn];
 				} else {
 					// Discards V2 transactions without a tip
-					console.log(`Discarding V2 transaction with no tip: ${txId}`);
 					return;
 				}
 			}
-
-			// console.log(`Summing up file data transaction: ${txId}`);
 
 			this.sumSize(ownerAddress, dataSize);
 			this.sumTip(ownerAddress, tip);
@@ -394,7 +420,6 @@ export class DailyOutput {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
 		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
-		console.log(`Output saved at ${OUTPUT_NAME}`);
 	}
 
 	/**

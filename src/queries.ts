@@ -63,16 +63,31 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight));
 		const response = await sendQuery(query);
 		if (response.edges.length) {
-			console.log(`Transactions count: ${response.edges.length}`);
 			const mostRecentTransaction = response.edges[response.edges.length - 1];
 			const height = mostRecentTransaction.node.block.height;
 			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
 			prevBlock = height;
 			allEdges.push(...response.edges);
 			hasNextPage = response.pageInfo.hasNextPage;
-			console.log(`Query has next page: ${hasNextPage}`);
 		} else {
-			console.log(`Ignoring empty GQL response`);
+			hasNextPage = false;
+		}
+	}
+
+	return allEdges;
+}
+
+export async function getBundledTransactions(txIds: string[]): Promise<GQLEdgeInterface[]> {
+	const allEdges: GQLEdgeInterface[] = [];
+	let hasNextPage = true;
+
+	while (hasNextPage) {
+		const query = createBundledTxsQuery(txIds);
+		const response = await sendQuery(query);
+		if (response.edges.length) {
+			allEdges.push(...response.edges);
+			hasNextPage = response.pageInfo.hasNextPage;
+		} else {
 			hasNextPage = false;
 		}
 	}
@@ -117,13 +132,11 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
 			if (errors) {
 				pendingRetries--;
-				console.log(`Retrying (${pendingRetries}). ${JSON.stringify(errors)}`);
 				continue;
 			}
 			return JSONBody.data.transactions as GQLTransactionsResultInterface;
 		} catch (e) {
 			pendingRetries--;
-			console.log(`Retrying (${pendingRetries}). ${JSON.stringify(e)}`);
 			continue;
 		}
 	}
@@ -154,6 +167,59 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
 						}
 					]
+					sort: HEIGHT_ASC
+				) {
+					pageInfo {
+						hasNextPage
+					}
+					edges {
+						cursor
+						node {
+							id
+							owner {
+								address
+							}
+							bundledIn {
+								id
+							}
+							tags {
+								name
+								value
+							}
+							data {
+								size
+								type
+							}
+							quantity {
+								winston
+							}
+							block {
+								timestamp
+								height
+							}
+						}
+					}
+				}
+			}`
+	};
+}
+
+/**
+ */
+function createBundledTxsQuery(txIDs: string[]): Query {
+	// FIXME: use minBlock & maxBlock
+	return {
+		query: `
+			query {
+				transactions(
+					first: ${ITEMS_PER_REQUEST}
+					tags: [
+						{
+							name: "App-Name"
+							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
+						}
+					]
+					bundledIn: [${txIDs.map((txId) => `"${txId}"`)}]
 					sort: HEIGHT_ASC
 				) {
 					pageInfo {
