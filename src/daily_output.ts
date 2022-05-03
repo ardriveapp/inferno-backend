@@ -83,7 +83,7 @@ export class DailyOutput {
 		});
 		unbundledTransactions.forEach(this.aggregateData);
 
-		// calculate this run's non unbubdled bundles
+		// calculate this run's non unbundled bundles
 		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips)
 			.filter((bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId))
 			.map((txId) => {
