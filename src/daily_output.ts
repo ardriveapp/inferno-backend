@@ -55,9 +55,9 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public feedGQLData(queryResult: GQLEdgeInterface[]): void {
+	public feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
 		queryResult.forEach(this.aggregateData);
-		this.finishDataAggregation();
+		return this.finishDataAggregation();
 	}
 
 	/**
