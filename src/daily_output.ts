@@ -203,6 +203,11 @@ export class DailyOutput {
 					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
 				}
 			});
+			this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
+				.sort(({ address: address_1 }, { address: address_2 }) =>
+					weeklyTiebreakerSortFactory(this.data.wallets)(address_1, address_2)
+				)
+				.map(({ address, rewards }, index) => ({ address, rewards, rankPosition: index + 1 }));
 			this.data.ranks.weekly = {
 				hasReachedMinimumGroupEffort: false,
 				groupEffortRewards: [],
