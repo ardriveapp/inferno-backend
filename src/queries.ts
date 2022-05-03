@@ -97,22 +97,22 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			await exponentialBackOffAfterFailedRequest(currentRetry);
 		}
 
-		const response = await Axios.request({
-			method: 'POST',
-			url: GQL_URL,
-			headers: {
-				'Accept-Encoding': 'gzip, deflate, br',
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-				Connection: 'keep-alive',
-				DNT: '1',
-				Origin: GQL_URL
-			},
-			data: JSON.stringify(query)
-		});
-		responseOk = response.status >= 200 && response.status < 300;
-
 		try {
+			const response = await Axios.request({
+				method: 'POST',
+				url: GQL_URL,
+				headers: {
+					'Accept-Encoding': 'gzip, deflate, br',
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					Connection: 'keep-alive',
+					DNT: '1',
+					Origin: GQL_URL
+				},
+				data: JSON.stringify(query)
+			});
+			responseOk = response.status >= 200 && response.status < 300;
+
 			const JSONBody = response.data;
 			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
 			if (errors) {

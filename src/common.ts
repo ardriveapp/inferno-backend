@@ -17,11 +17,20 @@ export async function getBlockHeight(): Promise<number> {
 	return (_cachedBlockHeight = blockHeight);
 }
 
-export function getMinBlockHeigh(): number {
+export function getMinBlockHeight(): number {
 	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
 
 	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
 
 	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
 	return file.blockHeight + 1;
+}
+
+export function getLastTimestamp(): number {
+	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
+
+	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
+
+	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
+	return file.timestamp;
 }
