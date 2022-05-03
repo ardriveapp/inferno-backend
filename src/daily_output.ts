@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { getLastTimestamp, tiebreakerSortFactory as weeklyTiebreakerSortFactory } from './common';
+import { getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -109,7 +109,7 @@ export class DailyOutput {
 		 * - by total tips sent
 		 * - by block since participating (i.e. has reached the minimum weekly data)
 		 */
-		const shuffledTies = groupEffortParticipants.sort(weeklyTiebreakerSortFactory(this.data.wallets));
+		const shuffledTies = groupEffortParticipants.sort(tiebreakerSortFactory('weekly', this.data.wallets));
 
 		shuffledTies.forEach((address, index) => {
 			this.data.wallets[address].daily.rankPosition = index + 1;
@@ -123,7 +123,7 @@ export class DailyOutput {
 		});
 
 		const otherParticipantsData = otherParticipants
-			.sort(weeklyTiebreakerSortFactory(this.data.wallets))
+			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
 			.map((address) => {
 				return { address, rewards: 0, rankPosition: 0 };
 			});
@@ -205,7 +205,7 @@ export class DailyOutput {
 			});
 			this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
 				.sort(({ address: address_1 }, { address: address_2 }) =>
-					weeklyTiebreakerSortFactory(this.data.wallets)(address_1, address_2)
+					tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
 				)
 				.map(({ address, rewards }, index) => ({ address, rewards, rankPosition: index + 1 }));
 			this.data.ranks.weekly = {
