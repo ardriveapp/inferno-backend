@@ -40,11 +40,18 @@ export function tiebreakerSortFactory(timeframe: 'weekly' | 'total', walletsStat
 	return (address_a: string, address_b: string): number => {
 		const walletStat_a = walletsStats[address_a];
 		const walletStat_b = walletsStats[address_b];
-		const volumeDiff = walletStat_a[timeframe].byteCount - walletStat_b[timeframe].byteCount;
-		const tipsDiff = walletStat_a[timeframe].tips - walletStat_b[timeframe].tips;
-		const blockSinceParticipatingDiff =
+		const volumeDiff = walletStat_b[timeframe].byteCount - walletStat_a[timeframe].byteCount;
+		const tipsDiff = walletStat_b[timeframe].tips - walletStat_a[timeframe].tips;
+		const blockSinceParticipatingDiff = (function () {
+			if (walletStat_a[timeframe].blockSinceParticipating === walletStat_b[timeframe].blockSinceParticipating) {
+				return 0;
+			}
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			walletStat_a[timeframe].blockSinceParticipating! - walletStat_b[timeframe].blockSinceParticipating!;
+			return (
+				(walletStat_b[timeframe].blockSinceParticipating || Number.POSITIVE_INFINITY) -
+				(walletStat_a[timeframe].blockSinceParticipating || Number.POSITIVE_INFINITY)
+			);
+		})();
 		return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
 	};
 }
