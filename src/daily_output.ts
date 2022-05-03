@@ -53,9 +53,9 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
+	public feedGQLData(queryResult: GQLEdgeInterface[]): void {
 		queryResult.forEach(this.aggregateData);
-		return this.finishDataAggregation();
+		this.finishDataAggregation();
 	}
 
 	/**
@@ -66,7 +66,7 @@ export class DailyOutput {
 	 * - group effort rewards, and
 	 * - streak rewards
 	 */
-	private async finishDataAggregation(): Promise<void> {
+	private finishDataAggregation(): void {
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
@@ -191,7 +191,7 @@ export class DailyOutput {
 				tips: 0
 			};
 			this.data.ranks.lastWeek = this.data.ranks.weekly;
-			// updates the total rewards ok week change
+			// updates the total rewards on week change
 			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
 				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
 					({ address: addr }) => addr === address
