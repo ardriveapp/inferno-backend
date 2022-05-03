@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { getLastTimestamp } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
