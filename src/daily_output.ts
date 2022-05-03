@@ -20,7 +20,7 @@ export class DailyOutput {
 	private data = this.read();
 	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
-	private bundlesTips: { [txId: string]: number } = {};
+	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private pendingSizeSumsOfUnverifiedBundleTips: { [txId: string]: { walletAddress: string; fileSize: number }[] } =
 		{};
 	private unbundledBundleTxIDs: string[] = [];
@@ -71,15 +71,17 @@ export class DailyOutput {
 	 */
 	private async finishDataAggregation(): Promise<void> {
 		// check for previous unbundled bundles
-		const prevNonUnbundledBundles: { txId: string; tip: number }[] = existsSync(NON_UNBUNDLED_BUNDLES_NAME)
+		const prevNonUnbundledBundles: { txId: string; tip: number; size: number; address: string }[] = existsSync(
+			NON_UNBUNDLED_BUNDLES_NAME
+		)
 			? JSON.parse(readFileSync(NON_UNBUNDLED_BUNDLES_NAME).toString())
 			: [];
 		const unbundledTransactions = prevNonUnbundledBundles.length
 			? await getBundledTransactions(prevNonUnbundledBundles.map(({ txId }) => txId))
 			: [];
 		// track the tips of the bundles yet not unbundled at the previous run
-		prevNonUnbundledBundles.forEach(({ tip, txId }) => {
-			this.bundlesTips[txId] = tip;
+		prevNonUnbundledBundles.forEach(({ tip, txId, size, address }) => {
+			this.bundlesTips[txId] = { tip, size, address };
 		});
 		unbundledTransactions.forEach(this.aggregateData);
 
@@ -89,11 +91,24 @@ export class DailyOutput {
 			.map((txId) => {
 				return {
 					txId,
-					tip: this.bundlesTips[txId]
+					tip: this.bundlesTips[txId].tip,
+					size: this.bundlesTips[txId].size,
+					address: this.bundlesTips[txId].address
 				};
 			});
+		const nonUnbundledBundlesWithTipOfPreviousRun = nonUnbundledBundlesWithTip.filter(({ txId }) =>
+			prevNonUnbundledBundles.some(({ txId: prevTxId }) => prevTxId === txId)
+		);
+		const nonUnbundledBundlesWithTipOfCurrentRun = nonUnbundledBundlesWithTip.filter(
+			({ txId }) => !prevNonUnbundledBundles.some(({ txId: prevTxId }) => prevTxId === txId)
+		);
+		nonUnbundledBundlesWithTipOfPreviousRun.forEach(({ size, address }) => {
+			// count the non unbundled bundles of the previous run, that are still non unbundled as one file
+			this.sumFile(address);
+			this.sumSize(address, size);
+		});
 		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
-		writeFileSync(NON_UNBUNDLED_BUNDLES_NAME, JSON.stringify(nonUnbundledBundlesWithTip));
+		writeFileSync(NON_UNBUNDLED_BUNDLES_NAME, JSON.stringify(nonUnbundledBundlesWithTipOfCurrentRun));
 
 		// calculate change in percentage of the uploaded data and rank position
 		this.data.blockHeight = this.heightRange[1];
@@ -289,7 +304,7 @@ export class DailyOutput {
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			this.bundlesTips[txId] = tip;
+			this.bundlesTips[txId] = { tip, size: node.data.size, address: ownerAddress };
 			let unverified;
 
 			while (
@@ -329,7 +344,7 @@ export class DailyOutput {
 						// Discard bundled transactions without a tip
 						return;
 					}
-					tip = this.bundlesTips[bundledIn];
+					tip = this.bundlesTips[bundledIn].tip;
 				} else {
 					// Discards V2 transactions without a tip
 					return;
