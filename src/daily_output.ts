@@ -230,15 +230,12 @@ export class DailyOutput {
 		const queryTimestamp = edge.node.block.timestamp;
 		const queryDate = new Date(queryTimestamp);
 
-		const isNewDay = previousDate.getDate() !== queryDate.getDate();
-		const isNewWeek = previousDate.getDay() !== queryDate.getDay();
-
-		if (isNewDay) {
+		if (this.isNewESTDate(previousDate, queryDate)) {
 			console.log(`Counting new day: ${queryDate.getDate()}, prev: ${previousDate.getDate()}`);
 			this.resetDay();
 		}
 
-		if (isNewWeek) {
+		if (this.isNewESTWeek(previousDate, queryDate)) {
 			console.log(`Counting new week: ${queryDate.getDay()}, prev: ${previousDate.getDay()}`);
 			this.resetWeek();
 		}
@@ -317,6 +314,26 @@ export class DailyOutput {
 		this.latestBlock = Math.max(this.latestBlock, node.block.height);
 		this.latestTimestamp = Math.max(this.latestTimestamp, node.block.timestamp);
 	};
+
+	private isNewESTDate(prev: Date, curr: Date): boolean {
+		const isNewDay = this.dateToEST(prev).getDate() !== this.dateToEST(curr).getDate();
+		return isNewDay;
+	}
+
+	private isNewESTWeek(prev: Date, curr: Date): boolean {
+		const isNewDay = this.dateToEST(prev).getDay() !== this.dateToEST(curr).getDay();
+		return isNewDay;
+	}
+
+	private dateToEST(d: Date): Date {
+		const date = new Date(d.getTime());
+		const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
+		date.setMinutes(date.getMinutes() + offset); // date now in UTC time
+
+		const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
+		date.setMinutes(date.getMinutes() + easternTimeOffset);
+		return date;
+	}
 
 	private isParticipatingInGroupEffort(address: string): boolean {
 		const currentByteCount = this.data.wallets[address].weekly.byteCount;
