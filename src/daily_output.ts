@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { getLastTimestamp } from './common';
+import { getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -53,9 +53,9 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
+	public feedGQLData(queryResult: GQLEdgeInterface[]): void {
 		queryResult.forEach(this.aggregateData);
-		return this.finishDataAggregation();
+		this.finishDataAggregation();
 	}
 
 	/**
@@ -66,7 +66,7 @@ export class DailyOutput {
 	 * - group effort rewards, and
 	 * - streak rewards
 	 */
-	private async finishDataAggregation(): Promise<void> {
+	private finishDataAggregation(): void {
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
@@ -103,24 +103,12 @@ export class DailyOutput {
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
-		/**
-		 * apply tiebreakers:
-		 * - by total upload volume
-		 * - by total tips sent
-		 * - by block since participating (i.e. has reached the minimum weekly data)
-		 */
-		const shuffledTies = groupEffortParticipants.sort((address_a, address_b) => {
-			const walletStat_a = this.data.wallets[address_a];
-			const walletStat_b = this.data.wallets[address_b];
-			const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
-			const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
-			const blockSinceParticipatingDiff =
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
-			return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
-		});
+		const shuffledTies = groupEffortParticipants.sort(tiebreakerSortFactory('weekly', this.data.wallets));
 
-		shuffledTies.forEach((address, index) => (this.data.wallets[address].daily.rankPosition = index + 1));
+		shuffledTies.forEach((address, index) => {
+			this.data.wallets[address].daily.rankPosition = index + 1;
+			this.data.wallets[address].weekly.rankPosition = index + 1;
+		});
 
 		const top50 = shuffledTies.slice(0, 49);
 
@@ -128,11 +116,16 @@ export class DailyOutput {
 			return { address, rewards: GROUP_EFFORT_REWARDS[index], rankPosition: index + 1 };
 		});
 
-		const otherParticipantsData = otherParticipants.map((address) => {
-			return { address, rewards: 0, rankPosition: 0 };
-		});
+		const otherParticipantsData = otherParticipants
+			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
+			.map((address) => {
+				return { address, rewards: 0, rankPosition: 0 };
+			});
 
 		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+		this.data.ranks.weekly.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+
+		// TODO: determine total ranking
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -192,6 +185,23 @@ export class DailyOutput {
 				tips: 0
 			};
 			this.data.ranks.lastWeek = this.data.ranks.weekly;
+			// updates the total rewards on week change
+			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
+					({ address: addr }) => addr === address
+				);
+				if (prevTotal) {
+					const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+					this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
+				} else {
+					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+				}
+			});
+			this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
+				.sort(({ address: address_1 }, { address: address_2 }) =>
+					tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
+				)
+				.map(({ address, rewards }, index) => ({ address, rewards, rankPosition: index + 1 }));
 			this.data.ranks.weekly = {
 				hasReachedMinimumGroupEffort: false,
 				groupEffortRewards: [],
