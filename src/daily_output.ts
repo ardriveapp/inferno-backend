@@ -36,7 +36,6 @@ export class DailyOutput {
 			try {
 				return this.readOutputFile();
 			} catch (err) {
-				console.info(`The output file hasn't yet been created. Using the file template`);
 				return this.readTemplate();
 			}
 		})();
@@ -278,14 +277,10 @@ export class DailyOutput {
 		const isNewWeek = previousDate.getDay() !== queryDate.getDay();
 
 		if (isNewDay) {
-			console.log(`Counting new day: ${queryDate.getDate()}, prev: ${previousDate.getDate()}`);
-			console.log(`#: ${queryDate.getTime()}, prev: ${previousDate.getTime()}`);
 			this.resetDay();
 		}
 
 		if (isNewWeek) {
-			console.log(`Counting new week: ${queryDate.getDay()}, prev: ${previousDate.getDay()}`);
-			console.log(`#: ${queryDate.getTime()}, prev: ${previousDate.getTime()}`);
 			this.resetWeek();
 		}
 
@@ -299,11 +294,9 @@ export class DailyOutput {
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
-				// console.log(`Found file metadata transaction: ${txId}`);
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			// console.log(`Found bundle transaction: ${txId}`);
 			this.bundlesTips[txId] = tip;
 			let unverified;
 
@@ -311,15 +304,12 @@ export class DailyOutput {
 				this.pendingSizeSumsOfUnverifiedBundleTips[txId] &&
 				(unverified = this.pendingSizeSumsOfUnverifiedBundleTips[txId].pop())
 			) {
-				// console.log(`Transaction's bundle tip verified: owner:${unverified.walletAddress} @bundle ${txId}`);
 				const dataSize = unverified.fileSize;
 				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, tip);
 			}
 		} else {
 			// it is file data transaction
-
-			// console.log(`Found file data transaction ${txId}`);
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
@@ -345,18 +335,14 @@ export class DailyOutput {
 					}
 					if (!isTipPresent) {
 						// Discard bundled transactions without a tip
-						console.log(`Discarding bundled transaction with no tip: ${txId}`);
 						return;
 					}
 					tip = this.bundlesTips[bundledIn];
 				} else {
 					// Discards V2 transactions without a tip
-					console.log(`Discarding V2 transaction with no tip: ${txId}`);
 					return;
 				}
 			}
-
-			// console.log(`Summing up file data transaction: ${txId}`);
 
 			this.sumSize(ownerAddress, dataSize);
 			this.sumTip(ownerAddress, tip);
@@ -439,7 +425,6 @@ export class DailyOutput {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
 		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
-		console.log(`Output saved at ${OUTPUT_NAME}`);
 	}
 
 	/**
