@@ -36,15 +36,15 @@ export function getLastTimestamp(): number {
 	return file.timestamp;
 }
 
-export function tiebreakerSortFactory(walletsStats: WalletsStats) {
+export function tiebreakerSortFactory(timeframe: 'weekly' | 'total', walletsStats: WalletsStats) {
 	return (address_a: string, address_b: string): number => {
 		const walletStat_a = walletsStats[address_a];
 		const walletStat_b = walletsStats[address_b];
-		const volumeDiff = walletStat_a.weekly.byteCount - walletStat_b.weekly.byteCount;
-		const tipsDiff = walletStat_a.weekly.tips - walletStat_b.weekly.tips;
+		const volumeDiff = walletStat_a[timeframe].byteCount - walletStat_b[timeframe].byteCount;
+		const tipsDiff = walletStat_a[timeframe].tips - walletStat_b[timeframe].tips;
 		const blockSinceParticipatingDiff =
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			walletStat_a.weekly.blockSinceParticipating! - walletStat_b.weekly.blockSinceParticipating!;
+			walletStat_a[timeframe].blockSinceParticipating! - walletStat_b[timeframe].blockSinceParticipating!;
 		return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
 	};
 }
