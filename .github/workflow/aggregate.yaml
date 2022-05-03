@@ -10,15 +10,6 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Recover the previous non unbundled bundles
-        id: get_persistent_value
-        uses: aaimio/get-persistent-value@v1.1.2
-        with:
-          key: NON_UNBUNDLED_TX_IDS
-          access_token: ${{ secrets.PERSISTENT_VALUE_ACCESS_TOKEN }}
-        run: |
-          echo ${{ steps.get_persistent_value.outputs.value }} > non_unbundled_bundles.json
-    
       - uses: actions/checkout@v3
       - name: Set NodeJS version
         id: node_version
@@ -54,11 +45,8 @@ jobs:
         run: export NON_UNBUNDLED=`cat non_unbundled_bundles.json`
 
       - name: Persist non unbundled bundles
-        id: set_persistent_value
-        uses: aaimio/get-persistent-value@v1.1.2
-        with:
-          key: NON_UNBUNDLED_TX_IDS
-          value: ${NON_UNBUNDLED}
-          access_token: ${{ secrets.PERSISTENT_VALUE_ACCESS_TOKEN }}
         run: |
-          echo ${{ steps.get_persistent_value.outputs.value }} > non_unbundled_bundles.json
+          git remote add github "https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
+          git pull github ${GITHUB_REF} --ff-only
+          git commit -a -m "chore(non unbundled bundles): gh action updating non_unbundled_bundles.json `date` PE-1270"
+          git push github HEAD:${GITHUB_REF}
