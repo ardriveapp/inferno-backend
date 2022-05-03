@@ -71,18 +71,27 @@ export class DailyOutput {
 	 */
 	private async finishDataAggregation(): Promise<void> {
 		// check for previous unbundled bundles
-		const prevNonUnbundledBundles: string[] = existsSync('non_unbundled_bundles.json')
+		const prevNonUnbundledBundles: { txId: string; tip: number }[] = existsSync('non_unbundled_bundles.json')
 			? JSON.parse(readFileSync('non_unbundled_bundles.json').toString())
 			: [];
 		const unbundledTransactions = prevNonUnbundledBundles.length
-			? await getBundledTransactions(prevNonUnbundledBundles)
+			? await getBundledTransactions(prevNonUnbundledBundles.map(({ txId }) => txId))
 			: [];
+		// track the tips of the bundles yet not unbundled at the previous run
+		prevNonUnbundledBundles.forEach(({ tip, txId }) => {
+			this.bundlesTips[txId] = tip;
+		});
 		unbundledTransactions.forEach(this.aggregateData);
 
 		// calculate this run's non unbubdled bundles
-		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips).filter(
-			(bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId)
-		);
+		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips)
+			.filter((bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId))
+			.map((txId) => {
+				return {
+					txId,
+					tip: this.bundlesTips[txId]
+				};
+			});
 		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
 		writeFileSync('non_unbundled_bundles.json', JSON.stringify(nonUnbundledBundlesWithTip));
 
