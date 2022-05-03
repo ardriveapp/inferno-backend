@@ -48,8 +48,8 @@ export function tiebreakerSortFactory(timeframe: 'weekly' | 'total', walletsStat
 			}
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			return (
-				(walletStat_b[timeframe].blockSinceParticipating || Number.POSITIVE_INFINITY) -
-				(walletStat_a[timeframe].blockSinceParticipating || Number.POSITIVE_INFINITY)
+				(walletStat_a[timeframe].blockSinceParticipating || Number.POSITIVE_INFINITY) -
+				(walletStat_b[timeframe].blockSinceParticipating || Number.POSITIVE_INFINITY)
 			);
 		})();
 		return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
