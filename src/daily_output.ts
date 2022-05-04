@@ -278,9 +278,8 @@ export class DailyOutput {
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			this.bundlesTips[txId] = { tip, size: node.data.size, address: ownerAddress };
-
 			if (bundleTipType === UPLOAD_DATA_TIP_TYPE) {
+				this.bundlesTips[txId] = { tip, size: node.data.size, address: ownerAddress };
 				this.sumSize(ownerAddress, node.data.size);
 				this.sumTip(ownerAddress, +node.quantity.winston);
 			}
