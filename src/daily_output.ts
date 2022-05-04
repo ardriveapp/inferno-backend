@@ -68,7 +68,7 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
-		// aggregate +1 file count to the non unbunded bundles
+		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
 			if (!this.bundleFileCount[txId]) {
