@@ -39,7 +39,7 @@ export class ArDriveContractOracle implements ContractOracle {
 	 *
 	 * @remarks Will fallback to other contract readers when one fails
 	 */
-	async readContract(txId: TransactionID): Promise<unknown> {
+	async readContract(txId: TransactionID, height?: number): Promise<unknown> {
 		let contract: unknown;
 		let currentContractReader = initialContractReader;
 		let readContractAttempts = initialContractAttempts;
@@ -47,7 +47,7 @@ export class ArDriveContractOracle implements ContractOracle {
 		while (!contract) {
 			try {
 				// Get contract with current contract reader's readContract implementation
-				contract = await this.contractReaders[currentContractReader].readContract(txId);
+				contract = await this.contractReaders[currentContractReader].readContract(txId, height);
 			} catch (error) {
 				readContractAttempts++;
 
@@ -75,7 +75,7 @@ export class ArDriveContractOracle implements ContractOracle {
 	 * @throws when the Community Contract cannot be fetched or is returned as falsy
 	 * @throws when the Community Contract is returned in an unexpected shape
 	 */
-	public async getCommunityContract(): Promise<CommunityContractData> {
+	public async getCommunityContract(height?: number): Promise<CommunityContractData> {
 		// Contract data already cached, return contract data
 		if (this.communityContract) {
 			return this.communityContract;
@@ -87,7 +87,7 @@ export class ArDriveContractOracle implements ContractOracle {
 		}
 
 		// Begin new contract read; cast result to known ArDrive Community Contract type
-		this.contractPromise = this.readContract(TxID(communityTxId)) as Promise<CommunityContractData>;
+		this.contractPromise = this.readContract(TxID(communityTxId), height) as Promise<CommunityContractData>;
 
 		this.communityContract = await this.contractPromise;
 
@@ -122,5 +122,30 @@ export class ArDriveContractOracle implements ContractOracle {
 		}
 
 		return arDriveCommTipFromSettings[1] / 100;
+	}
+
+	public async wasValidPSTHolder(height: number, address: string): Promise<boolean> {
+		// Read the ArDrive Smart Contract to get the latest state
+		const contract = await this.getCommunityContract(height);
+
+		const balances = contract.balances;
+		const vault = contract.vault;
+
+		// Check for how many tokens the user has staked/vaulted
+		for (const addr of Object.keys(vault)) {
+			if (!vault[addr].length) continue;
+
+			const vaultBalance = vault[addr]
+				.map((a: { balance: number; start: number; end: number }) => a.balance)
+				.reduce((a: number, b: number) => a + b, 0);
+
+			if (addr in balances) {
+				balances[addr] += vaultBalance;
+			} else {
+				balances[addr] = vaultBalance;
+			}
+		}
+
+		return !!balances[address];
 	}
 }
