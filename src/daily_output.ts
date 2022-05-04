@@ -228,15 +228,19 @@ export class DailyOutput {
 		const txId = node.id;
 		const ownerAddress = node.owner.address;
 		const tip = +node.quantity.winston;
+		const fee = +node.fee.winston;
 		const tags = node.tags;
 		const dataSize = +node.data.size;
+		const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundledIn = node.bundledIn?.id;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
 		const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
-
+		const unboostedFee = fee / boostValue;
+		const tipPercentage = unboostedFee / tip;
+		const isTipPercentageValid = !tip ? 0 : tipPercentage + Number.EPSILON >= 15;
 		const previousTimestamp = this.latestTimestamp * 1000;
 		const previousBlockHeight = this.previousData.blockHeight;
 		const previousDate = new Date(previousTimestamp);
@@ -278,7 +282,7 @@ export class DailyOutput {
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			if (bundleTipType === UPLOAD_DATA_TIP_TYPE) {
+			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipPercentageValid) {
 				this.bundlesTips[txId] = { tip, size: node.data.size, address: ownerAddress };
 				this.sumSize(ownerAddress, node.data.size);
 				this.sumTip(ownerAddress, +node.quantity.winston);
@@ -288,13 +292,12 @@ export class DailyOutput {
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
-				// const fee = +node.fee.winston;
-				// // if boosted, the tip ratio will be greater than 15
-				// const tipRatio = fee / tip;
-				// const correctTipRatio = tipRatio >= 15;
-				// const recipient = node.recipient;
-
 				// transactions with no tip are bundled transactions or invalid V2 transactions
+				return;
+			}
+
+			if (!isTipPercentageValid) {
+				// invalid tips are discarded
 				return;
 			}
 
