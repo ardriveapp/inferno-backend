@@ -20,7 +20,6 @@ export class DailyOutput {
 	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
-	private unbundledBundleTxIDs: string[] = [];
 	private bundleFileCount: { [txId: string]: number } = {};
 
 	constructor(private heightRange: [number, number]) {}
@@ -68,7 +67,7 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
-		// aggregate +1 file count to the non unbunded bundles
+		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
 			if (!this.bundleFileCount[txId]) {
@@ -260,13 +259,6 @@ export class DailyOutput {
 
 		if (this.isNewESTWeek(previousDate, queryDate)) {
 			this.resetWeek();
-		}
-
-		// track unbundled bundles
-		if (bundledIn) {
-			if (this.unbundledBundleTxIDs.indexOf(bundledIn) === -1) {
-				this.unbundledBundleTxIDs.push(bundledIn);
-			}
 		}
 
 		if (isMetadataTransaction) {
