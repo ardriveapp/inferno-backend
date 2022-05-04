@@ -23,3 +23,4 @@ export const initialWalletStats = (): WalletStatEntry => {
 		tips: 0
 	};
 };
+export const UPLOAD_DATA_TIP_TYPE = 'data upload';
