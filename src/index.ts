@@ -3,7 +3,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { DailyOutput } from './daily_output';
 import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './queries';
-import { getBlockHeight, getMinBlockHeight } from './common';
+import { arweave, getBlockHeight, getMinBlockHeight } from './common';
 
 /**
  * A Python-like approach to determine if the JS code is running this exact module, and not being imported
@@ -50,8 +50,7 @@ function run(): void {
 async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promise<void> {
 	const minimumBlock = minBlock ?? getMinBlockHeight();
 	const maximumBlock = maxBlock ?? (await getBlockHeight());
-
-	const output = new DailyOutput([minimumBlock, maximumBlock]);
+	const output = new DailyOutput([minimumBlock, maximumBlock], arweave);
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
 	const edges = await getAllArDriveTransactionsWithin(minimumBlock, maximumBlock);

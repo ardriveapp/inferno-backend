@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { existsSync, rmSync, writeFileSync } from 'fs';
 import Sinon from 'sinon';
+import { fakeArweave } from '../tests/stubs';
+import { expectAsyncErrorThrow } from '../tests/test_helpers';
 import { OUTPUT_NAME } from './constants';
 import { DailyOutput } from './daily_output';
 import { OutputData } from './inferno_types';
@@ -72,7 +74,7 @@ const mockMalformedDailyOutput = {
 const mockMalformedStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(mockMalformedDailyOutput, null, '\t')}\n`;
 
 describe('DailyOutput class', () => {
-	const output = new DailyOutput([50, 100]);
+	const output = new DailyOutput([50, 100], fakeArweave);
 
 	describe('read method', () => {
 		before(() => {
@@ -143,8 +145,8 @@ describe('DailyOutput class', () => {
 		});
 
 		it('Throws if the previous block height is ahead of some query result', () => {
-			expect(() =>
-				output.feedGQLData([
+			return expectAsyncErrorThrow({
+				promiseToError: output.feedGQLData([
 					{
 						cursor: '914100',
 						node: {
@@ -175,8 +177,9 @@ describe('DailyOutput class', () => {
 							}
 						}
 					}
-				])
-			).to.throw(undefined, 'That block was already processed!');
+				]),
+				errorMessage: 'That block was already processed!'
+			});
 		});
 	});
 });

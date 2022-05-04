@@ -1,6 +1,8 @@
 import fs from 'fs';
 import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME } from './constants';
 import { WalletsStats } from './inferno_types';
+import Arweave from 'arweave';
+import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
 
 export function gqlResultName(minBlock: number, maxBlock: number): string {
 	return `gql_result_${minBlock}-${maxBlock}.json`;
@@ -67,3 +69,10 @@ export function calculateTipPercentage(fee: number, boostValue: number, tip: num
 	const tipPercentage = tip / unboostedFee;
 	return tipPercentage * 100;
 }
+
+export const arweave = Arweave.init({
+	host: defaultGatewayHost,
+	port: defaultGatewayPort,
+	protocol: defaultGatewayProtocol,
+	timeout: 600000
+});

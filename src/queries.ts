@@ -4,7 +4,7 @@ import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
 import { writeFileSync } from 'fs';
-import { getBlockHeight, gqlResultName } from './common';
+import { arweave, getBlockHeight, gqlResultName } from './common';
 
 const initialErrorDelayMS = 1000;
 
@@ -25,7 +25,7 @@ export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
  */
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	const blockHeight = await getBlockHeight();
-	const communityOracle = new ArDriveCommunityOracle();
+	const communityOracle = new ArDriveCommunityOracle(arweave);
 	const vault = await communityOracle.getArdriveVaults();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
 	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
