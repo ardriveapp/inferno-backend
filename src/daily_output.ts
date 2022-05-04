@@ -1,16 +1,15 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
-	NON_UNBUNDLED_BUNDLES_NAME,
+	UPLOAD_DATA_TIP_TYPE,
 	ONE_THOUSAND_MB,
 	OUTPUT_NAME,
 	OUTPUT_TEMPLATE_NAME
 } from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
-import { getBundledTransactions } from './queries';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
@@ -21,9 +20,8 @@ export class DailyOutput {
 	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
-	private pendingSizeSumsOfUnverifiedBundleTips: { [txId: string]: { walletAddress: string; fileSize: number }[] } =
-		{};
 	private unbundledBundleTxIDs: string[] = [];
+	private bundleFileCount: { [txId: string]: number } = {};
 
 	constructor(private heightRange: [number, number]) {}
 
@@ -70,45 +68,13 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
-		// check for previous unbundled bundles
-		const prevNonUnbundledBundles: { txId: string; tip: number; size: number; address: string }[] = existsSync(
-			NON_UNBUNDLED_BUNDLES_NAME
-		)
-			? JSON.parse(readFileSync(NON_UNBUNDLED_BUNDLES_NAME).toString())
-			: [];
-		const unbundledTransactions = prevNonUnbundledBundles.length
-			? await getBundledTransactions(prevNonUnbundledBundles.map(({ txId }) => txId))
-			: [];
-		// track the tips of the bundles yet not unbundled at the previous run
-		prevNonUnbundledBundles.forEach(({ tip, txId, size, address }) => {
-			this.bundlesTips[txId] = { tip, size, address };
+		// aggregate +1 file count to the non unbunded bundles
+		const bundleTxIDs = Object.keys(this.bundlesTips);
+		bundleTxIDs.forEach((txId) => {
+			if (!this.bundleFileCount[txId]) {
+				this.sumFile(this.bundlesTips[txId].address);
+			}
 		});
-		unbundledTransactions.forEach(this.aggregateData);
-
-		// calculate this run's non unbundled bundles
-		const nonUnbundledBundlesWithTip = Object.keys(this.bundlesTips)
-			.filter((bundleTxId) => !this.unbundledBundleTxIDs.includes(bundleTxId))
-			.map((txId) => {
-				return {
-					txId,
-					tip: this.bundlesTips[txId].tip,
-					size: this.bundlesTips[txId].size,
-					address: this.bundlesTips[txId].address
-				};
-			});
-		const nonUnbundledBundlesWithTipOfPreviousRun = nonUnbundledBundlesWithTip.filter(({ txId }) =>
-			prevNonUnbundledBundles.some(({ txId: prevTxId }) => prevTxId === txId)
-		);
-		const nonUnbundledBundlesWithTipOfCurrentRun = nonUnbundledBundlesWithTip.filter(
-			({ txId }) => !prevNonUnbundledBundles.some(({ txId: prevTxId }) => prevTxId === txId)
-		);
-		nonUnbundledBundlesWithTipOfPreviousRun.forEach(({ size, address }) => {
-			// count the non unbundled bundles of the previous run, that are still non unbundled as one file
-			this.sumFile(address);
-			this.sumSize(address, size);
-		});
-		// update non unbundled bundles list (this includes any bundle of the previous run that wasn't YET unbundled)
-		writeFileSync(NON_UNBUNDLED_BUNDLES_NAME, JSON.stringify(nonUnbundledBundlesWithTipOfCurrentRun));
 
 		// calculate change in percentage of the uploaded data and rank position
 		this.data.blockHeight = this.heightRange[1];
@@ -261,12 +227,13 @@ export class DailyOutput {
 		const node = edge.node;
 		const txId = node.id;
 		const ownerAddress = node.owner.address;
-		let tip = +node.quantity.winston;
+		const tip = +node.quantity.winston;
 		const tags = node.tags;
 		const dataSize = +node.data.size;
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundledIn = node.bundledIn?.id;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
+		const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
 
@@ -301,20 +268,24 @@ export class DailyOutput {
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
+				if (bundledIn) {
+					// track the file count of unbundled bundles
+					if (this.bundleFileCount[txId] === undefined) {
+						this.bundleFileCount[txId] = 0;
+					}
+					this.bundleFileCount[txId] += 1;
+				}
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
 			this.bundlesTips[txId] = { tip, size: node.data.size, address: ownerAddress };
-			let unverified;
 
-			while (
-				this.pendingSizeSumsOfUnverifiedBundleTips[txId] &&
-				(unverified = this.pendingSizeSumsOfUnverifiedBundleTips[txId].pop())
-			) {
-				const dataSize = unverified.fileSize;
-				this.sumSize(ownerAddress, dataSize);
-				this.sumTip(ownerAddress, tip);
+			if (bundleTipType === UPLOAD_DATA_TIP_TYPE) {
+				this.sumSize(ownerAddress, node.data.size);
+				this.sumTip(ownerAddress, +node.quantity.winston);
 			}
+
+			// TODO: track the bundles file count
 		} else {
 			// it is file data transaction
 
@@ -326,31 +297,11 @@ export class DailyOutput {
 				// const correctTipRatio = tipRatio >= 15;
 				// const recipient = node.recipient;
 
-				const isBundledTransaction = !!bundledIn;
-				if (isBundledTransaction) {
-					const isTipPresent = this.bundlesTips[bundledIn];
-					if (isTipPresent === undefined) {
-						if (!this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn]) {
-							this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn] = [];
-						}
-						this.pendingSizeSumsOfUnverifiedBundleTips[bundledIn].push({
-							walletAddress: ownerAddress,
-							fileSize: dataSize
-						});
-						// The bunlde tip will be checked after the whole data is processed
-						return;
-					}
-					if (!isTipPresent) {
-						// Discard bundled transactions without a tip
-						return;
-					}
-					tip = this.bundlesTips[bundledIn].tip;
-				} else {
-					// Discards V2 transactions without a tip
-					return;
-				}
+				// transactions with no tip are bundled transactions or invalid V2 transactions
+				return;
 			}
 
+			// it is a V2 transaction with a tip
 			this.sumSize(ownerAddress, dataSize);
 			this.sumTip(ownerAddress, tip);
 
