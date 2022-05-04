@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { getLastTimestamp, tiebreakerSortFactory } from './common';
+import { calculateTipPercentage, getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -247,12 +247,12 @@ export class DailyOutput {
 		}
 
 		const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
-		const tip = +node.quantity.winston;
 		const fee = +node.fee.winston;
-		const unboostedFee = fee / boostValue;
-		const tipPercentage = unboostedFee / tip;
+		const tip = +node.quantity.winston;
+		const tipPercentage = calculateTipPercentage(fee, boostValue, tip);
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
+		// we are using EPSILON here to have a minimum range of error acceptance
 		const isTipPercentageValid = !tip ? 0 : tipPercentage + Number.EPSILON >= 15;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;

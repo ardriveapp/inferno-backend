@@ -61,3 +61,9 @@ export function tiebreakerSortFactory(timeframe: 'weekly' | 'total', walletsStat
 		return volumeDiff || tipsDiff || blockSinceParticipatingDiff;
 	};
 }
+
+export function calculateTipPercentage(fee: number, boostValue: number, tip: number): number {
+	const unboostedFee = fee / boostValue;
+	const tipPercentage = tip / unboostedFee;
+	return tipPercentage * 100;
+}
