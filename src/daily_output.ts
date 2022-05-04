@@ -283,8 +283,6 @@ export class DailyOutput {
 				this.sumSize(ownerAddress, node.data.size);
 				this.sumTip(ownerAddress, +node.quantity.winston);
 			}
-
-			// TODO: track the bundles file count
 		} else {
 			// it is file data transaction
 
