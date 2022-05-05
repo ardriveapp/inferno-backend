@@ -259,19 +259,20 @@ export class DailyOutput {
 		const wasValidTipRecipient = await this.ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
 
 		const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
-		const fee = +node.fee.winston;
-		const tip = +node.quantity.winston;
-		const tipPercentage = calculateTipPercentage(fee, boostValue, tip);
+		const fee = node.fee.winston ? +node.fee.winston : undefined;
+		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
+		const tipPercentage = fee && tip && calculateTipPercentage(fee, boostValue, tip);
+		// we are using EPSILON here to have a minimum range of error acceptance
+		const isTipPercentageValid = tipPercentage ? tipPercentage + Number.EPSILON >= 15 : undefined;
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
-		// we are using EPSILON here to have a minimum range of error acceptance
-		const isTipPercentageValid = tipPercentage + Number.EPSILON >= 15;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
+
+		const bundledIn = node.bundledIn?.id;
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
-				const bundledIn = node.bundledIn?.id;
 				if (bundledIn) {
 					// track the file count of unbundled bundles
 					if (this.bundleFileCount[txId] === undefined) {
@@ -281,16 +282,23 @@ export class DailyOutput {
 				}
 				this.sumFile(ownerAddress);
 			}
-		} else if (isBundleTransaction) {
+		} else if (isBundleTransaction && tip && fee) {
 			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
 			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipPercentageValid && wasValidTipRecipient) {
 				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
 				this.sumSize(ownerAddress, dataSize);
-				this.sumTip(ownerAddress, +node.quantity.winston);
-			}
-		} else {
-			// it is file data transaction
+				this.sumTip(ownerAddress, tip);
 
+				// Set the block height once the minimum amount of data to participate is reached
+				if (
+					!this.data.wallets[ownerAddress].weekly.blockSinceParticipating &&
+					this.isParticipatingInGroupEffort(ownerAddress)
+				) {
+					this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
+				}
+			}
+		} else if (!bundledIn) {
+			// it is file data transaction
 			if (!tip) {
 				// transactions with no tip are bundled transactions or invalid V2 transactions
 				return;
