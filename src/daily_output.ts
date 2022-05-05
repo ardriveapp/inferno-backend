@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { getLastTimestamp, tiebreakerSortFactory } from './common';
+import { calculateTipPercentage, getLastTimestamp, tiebreakerSortFactory } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -226,40 +226,40 @@ export class DailyOutput {
 		const node = edge.node;
 		const txId = node.id;
 		const ownerAddress = node.owner.address;
-		const tip = +node.quantity.winston;
 		const tags = node.tags;
 		const dataSize = +node.data.size;
-		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
-		const bundledIn = node.bundledIn?.id;
-		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
-		const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
-		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
-		const isBundleTransaction = !!bundleVersion;
-
-		const previousTimestamp = this.latestTimestamp * 1000;
-		const previousBlockHeight = this.previousData.blockHeight;
-		const previousDate = new Date(previousTimestamp);
 
 		const height = edge.node.block.height;
-
+		const previousBlockHeight = this.previousData.blockHeight;
 		if (previousBlockHeight >= height) {
 			throw new Error('That block was already processed!');
 		}
 
 		const queryTimestamp = edge.node.block.timestamp * 1000;
 		const queryDate = new Date(queryTimestamp);
-
+		const previousTimestamp = this.latestTimestamp * 1000;
+		const previousDate = new Date(previousTimestamp);
 		if (this.isNewESTDate(previousDate, queryDate)) {
 			this.resetDay();
 		}
-
 		if (this.isNewESTWeek(previousDate, queryDate)) {
 			this.resetWeek();
 		}
 
+		const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
+		const fee = +node.fee.winston;
+		const tip = +node.quantity.winston;
+		const tipPercentage = calculateTipPercentage(fee, boostValue, tip);
+		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
+		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
+		// we are using EPSILON here to have a minimum range of error acceptance
+		const isTipPercentageValid = !tip ? 0 : tipPercentage + Number.EPSILON >= 15;
+		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
+		const isBundleTransaction = !!bundleVersion;
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
+				const bundledIn = node.bundledIn?.id;
 				if (bundledIn) {
 					// track the file count of unbundled bundles
 					if (this.bundleFileCount[txId] === undefined) {
@@ -270,9 +270,10 @@ export class DailyOutput {
 				this.sumFile(ownerAddress);
 			}
 		} else if (isBundleTransaction) {
-			if (bundleTipType === UPLOAD_DATA_TIP_TYPE) {
-				this.bundlesTips[txId] = { tip, size: node.data.size, address: ownerAddress };
-				this.sumSize(ownerAddress, node.data.size);
+			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
+			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipPercentageValid) {
+				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
+				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, +node.quantity.winston);
 			}
 		} else {
@@ -280,13 +281,12 @@ export class DailyOutput {
 
 			if (!tip) {
 				// TODO: check for the validity of the addres recieving the tip
-				// const fee = +node.fee.winston;
-				// // if boosted, the tip ratio will be greater than 15
-				// const tipRatio = fee / tip;
-				// const correctTipRatio = tipRatio >= 15;
-				// const recipient = node.recipient;
-
 				// transactions with no tip are bundled transactions or invalid V2 transactions
+				return;
+			}
+
+			if (!isTipPercentageValid) {
+				// invalid tips are discarded
 				return;
 			}
 
