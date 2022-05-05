@@ -6,6 +6,9 @@ import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME } from './constants';
 import { WalletsStats } from './inferno_types';
 import Arweave from 'arweave';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
+import { GQLNodeInterface } from './gql_types';
+
+const EPSILON = 0.1;
 
 export function gqlResultName(minBlock: number, maxBlock: number): string {
 	return `gql_result_${minBlock}-${maxBlock}.json`;
@@ -84,3 +87,16 @@ export const ardriveOracle = new ArDriveContractOracle([
 	new RedstoneContractReader(arweave),
 	new SmartweaveContractReader(arweave)
 ]);
+
+export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDriveContractOracle): Promise<boolean> {
+	const tags = node.tags;
+	const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
+	const fee = +node.fee.winston;
+	const tip = +node.quantity.winston;
+	const tipPercentage = calculateTipPercentage(fee, boostValue, tip);
+	const height = node.block.height;
+	const tipRecipientAddress = node.recipient;
+	const wasValidTipRecipient = await ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
+
+	return tipPercentage + EPSILON >= 15 && wasValidTipRecipient;
+}

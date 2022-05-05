@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { calculateTipPercentage, getLastTimestamp, tiebreakerSortFactory, ardriveOracle } from './common';
+import { validateTxTip, getLastTimestamp, tiebreakerSortFactory, ardriveOracle } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -247,15 +247,10 @@ export class DailyOutput {
 			this.resetWeek();
 		}
 
-		const tipRecipientAddress = node.recipient;
-		const wasValidTipRecipient = await this.ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
-
-		const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
 		const fee = node.fee.winston ? +node.fee.winston : undefined;
 		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
-		const tipPercentage = fee && tip && calculateTipPercentage(fee, boostValue, tip);
 		// we are using EPSILON here to have a minimum range of error acceptance
-		const isTipPercentageValid = tipPercentage ? tipPercentage + 0.1 >= 15 : undefined;
+		const isTipValid = await validateTxTip(node, this.ardriveOracle);
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
@@ -276,8 +271,7 @@ export class DailyOutput {
 			}
 		} else if (isBundleTransaction && tip && fee) {
 			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
-
-			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipPercentageValid && wasValidTipRecipient) {
+			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipValid) {
 				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
 				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, tip);
@@ -296,7 +290,7 @@ export class DailyOutput {
 				// transactions with no tip are bundled transactions or invalid V2 transactions
 				return;
 			}
-			if (!(isTipPercentageValid && wasValidTipRecipient)) {
+			if (!isTipValid) {
 				// invalid tips are discarded
 				return;
 			}
