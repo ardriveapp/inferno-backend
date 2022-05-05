@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { calculateTipPercentage, validateTxTip } from './common';
+import { calculateTipPercentage, daysDiffInEST, validateTxTip, weeksDiffInEST } from './common';
 import { stub } from 'sinon';
 import { mockAddressRecipient, mockHeight, stubArdriveOracle, stubTxNode } from '../tests/stubs';
 
@@ -54,5 +54,43 @@ describe('common methods', () => {
 			const isValid = await validateTxTip(stubNode, stubArdriveOracle);
 			expect(isValid).to.be.false;
 		});
+	});
+
+	const mockDateTimestamp = 1651785959180;
+	const aDayInMilliseconds = 1000 * 60 * 60 * 24;
+	const aWeekInMilliseconds = aDayInMilliseconds * 7;
+	const sameDay = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 1000)];
+	const differentDay = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 2 * aDayInMilliseconds)];
+	const differentWeek = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 2 * aWeekInMilliseconds)];
+	describe('daysDiffInEST function', () => {
+		it('return 0 when both dates are in the same EST day', () => {
+			const [prev, curr] = sameDay;
+			expect(daysDiffInEST(prev, curr)).to.equal(0);
+		});
+
+		it('return 2 when the dates have two days of difference in EST time', () => {
+			const [prev, curr] = differentDay;
+			expect(daysDiffInEST(prev, curr)).to.equal(2);
+		});
+	});
+
+	describe('weeksDiffInEST function', () => {
+		it('return 0 when both dates are in the same EST week', () => {
+			const [prev, curr] = sameDay;
+			expect(weeksDiffInEST(prev, curr)).to.equal(0);
+		});
+
+		it('return 2 when the dates have two weeks of difference in EST time', () => {
+			const [prev, curr] = differentWeek;
+			expect(weeksDiffInEST(prev, curr)).to.equal(2);
+		});
+	});
+
+	describe('dateToEST function', () => {
+		before(() => {
+			// TODO: set a custom timezone (e.g. UTC) in this environment
+		});
+
+		it('returns a date with 4hs behind UTC');
 	});
 });
