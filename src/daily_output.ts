@@ -1,9 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { calculateTipPercentage, getLastTimestamp, tiebreakerSortFactory } from './common';
-import Arweave from 'arweave';
-import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
-import { RedstoneContractReader } from './community/redstone_contract_reader';
-import { SmartweaveContractReader } from './community/smartweave_contract_oracle';
+import { calculateTipPercentage, getLastTimestamp, tiebreakerSortFactory, ardriveOracle } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -19,18 +15,14 @@ import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './i
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
  */
 export class DailyOutput {
-	private readonly ardriveOracle = new ArDriveContractOracle([
-		new RedstoneContractReader(this.arweave),
-		new SmartweaveContractReader(this.arweave)
-	]);
+	private readonly ardriveOracle = ardriveOracle;
 	private readonly previousData = this.read();
 	private data = this.read();
-	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
 
-	constructor(private heightRange: [number, number], private readonly arweave: Arweave) {}
+	constructor(private heightRange: [number, number]) {}
 
 	/**
 	 * Takes the data from the previously generated data, fallbacking to the base template if not present
@@ -263,7 +255,7 @@ export class DailyOutput {
 		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
 		const tipPercentage = fee && tip && calculateTipPercentage(fee, boostValue, tip);
 		// we are using EPSILON here to have a minimum range of error acceptance
-		const isTipPercentageValid = tipPercentage ? tipPercentage + Number.EPSILON >= 15 : undefined;
+		const isTipPercentageValid = tipPercentage ? tipPercentage + 0.1 >= 15 : undefined;
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
@@ -284,6 +276,7 @@ export class DailyOutput {
 			}
 		} else if (isBundleTransaction && tip && fee) {
 			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
+
 			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipPercentageValid && wasValidTipRecipient) {
 				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
 				this.sumSize(ownerAddress, dataSize);
@@ -321,8 +314,7 @@ export class DailyOutput {
 			}
 		}
 
-		this.latestBlock = Math.max(this.latestBlock, node.block.height);
-		this.latestTimestamp = Math.max(this.latestTimestamp, node.block.timestamp);
+		this.latestTimestamp = node.block.timestamp;
 	};
 
 	private isNewESTDate(prev: Date, curr: Date): boolean {

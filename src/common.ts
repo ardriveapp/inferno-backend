@@ -1,4 +1,7 @@
 import fs from 'fs';
+import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
+import { RedstoneContractReader } from './community/redstone_contract_reader';
+import { SmartweaveContractReader } from './community/smartweave_contract_oracle';
 import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME } from './constants';
 import { WalletsStats } from './inferno_types';
 import Arweave from 'arweave';
@@ -76,3 +79,8 @@ export const arweave = Arweave.init({
 	protocol: defaultGatewayProtocol,
 	timeout: 600000
 });
+
+export const ardriveOracle = new ArDriveContractOracle([
+	new RedstoneContractReader(arweave),
+	new SmartweaveContractReader(arweave)
+]);
