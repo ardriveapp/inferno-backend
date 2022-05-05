@@ -144,4 +144,9 @@ describe('The ArDriveContractOracle', () => {
 			expect(readContractSpy.callCount).to.equal(1);
 		});
 	});
+
+	describe('wasValidPSTHolder method', () => {
+		it('returns true if the recipient was a valid PST token');
+		it('returns false if the recipient was not a valid PST token');
+	});
 });
