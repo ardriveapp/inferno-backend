@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spy } from 'sinon';
-import { stubCommunityContract, stubTxID } from '../../tests/stubs';
+import { mockAddressRecipient, mockHeight, stubCommunityContract, stubTxID } from '../../tests/stubs';
 import { expectAsyncErrorThrow } from '../../tests/test_helpers';
 import { ArDriveContractOracle } from './ardrive_contract_oracle';
 
@@ -146,7 +146,14 @@ describe('The ArDriveContractOracle', () => {
 	});
 
 	describe('wasValidPSTHolder method', () => {
-		it('returns true if the recipient was a valid PST token');
-		it('returns false if the recipient was not a valid PST token');
+		it('returns true if the recipient was a valid PST token', async () => {
+			const wasValid = await arDriveContractOracle.wasValidPSTHolder(mockHeight, mockAddressRecipient);
+			expect(wasValid).to.be.true;
+		});
+
+		it('returns false if the recipient was not a valid PST token', async () => {
+			const wasValid = await arDriveContractOracle.wasValidPSTHolder(mockHeight, 'some invalid address');
+			expect(wasValid).to.be.false;
+		});
 	});
 });

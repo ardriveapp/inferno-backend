@@ -125,27 +125,12 @@ export class ArDriveContractOracle implements ContractOracle {
 	}
 
 	public async wasValidPSTHolder(height: number, address: string): Promise<boolean> {
-		// Read the ArDrive Smart Contract to get the latest state
-		const contract = await this.getCommunityContract(height);
+		// Read the ArDrive Smart Contract to get state at `height`
+		const contract = (await this.readContract(TxID(communityTxId), height)) as CommunityContractData;
 
 		const balances = contract.balances;
 		const vault = contract.vault;
 
-		// Check for how many tokens the user has staked/vaulted
-		for (const addr of Object.keys(vault)) {
-			if (!vault[addr].length) continue;
-
-			const vaultBalance = vault[addr]
-				.map((a: { balance: number; start: number; end: number }) => a.balance)
-				.reduce((a: number, b: number) => a + b, 0);
-
-			if (addr in balances) {
-				balances[addr] += vaultBalance;
-			} else {
-				balances[addr] = vaultBalance;
-			}
-		}
-
-		return !!balances[address];
+		return !!balances[address] || !!vault[address];
 	}
 }
