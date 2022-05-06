@@ -126,7 +126,7 @@ export function weeksDiffInEST(prev: Date, curr: Date): number {
 	const currEstDate = dateToEST(curr);
 
 	let weeksCount = 0;
-	const cursorDate = toSunday(prevEstDate);
+	const cursorDate = dateToSunday(prevEstDate);
 
 	while (currEstDate.getTime() > cursorDate.getTime()) {
 		const cursorDay = cursorDate.getDate();
@@ -139,15 +139,14 @@ export function weeksDiffInEST(prev: Date, curr: Date): number {
 	return weeksCount;
 }
 
-function toSunday(date: Date) {
-	const day = date.getDay() || 7;
+export function dateToSunday(date: Date) {
+	const dayOfWeek = date.getDay();
 	const newDate = new Date(date.getTime());
-	if (day !== 7) {
-		newDate.setHours(-24 * (day - 1));
-	}
+	newDate.setDate(newDate.getDate() - dayOfWeek);
 	newDate.setHours(0);
 	newDate.setMinutes(0);
 	newDate.setSeconds(0);
+	newDate.setMilliseconds(0);
 	return newDate;
 }
 
