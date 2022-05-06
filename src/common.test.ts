@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { calculateTipPercentage, daysDiffInEST, validateTxTip, weeksDiffInEST } from './common';
+import { calculateTipPercentage, dateToSunday, daysDiffInEST, validateTxTip, weeksDiffInEST } from './common';
 import { stub } from 'sinon';
 import { mockAddressRecipient, mockHeight, stubArdriveOracle, stubTxNode } from '../tests/stubs';
 
@@ -92,5 +92,35 @@ describe('common methods', () => {
 		});
 
 		it('returns a date with 4hs behind UTC');
+	});
+
+	describe('dateToSunday method', () => {
+		it('returns a date in the first second of this week (sunday)', () => {
+			const dateOnThursday = new Date(mockDateTimestamp);
+			const dateOnPrevSunday = dateToSunday(dateOnThursday);
+			const diffInMilliseconds = dateOnThursday.getTime() - dateOnPrevSunday.getTime();
+
+			expect(diffInMilliseconds).to.be.lessThan(aWeekInMilliseconds);
+			expect(dateOnPrevSunday.getDay()).to.equal(0);
+			expect(dateOnPrevSunday.getHours()).to.equal(0);
+			expect(dateOnPrevSunday.getMinutes()).to.equal(0);
+			expect(dateOnPrevSunday.getSeconds()).to.equal(0);
+			expect(dateOnPrevSunday.getMilliseconds()).to.equal(0);
+		});
+
+		it('returns a date in the same day if already on sunday', () => {
+			const dateOnSunday = new Date(1651374000003);
+			const toSunday = dateToSunday(dateOnSunday);
+			const diffInMilliseconds = dateOnSunday.getTime() - toSunday.getTime();
+
+			expect(diffInMilliseconds).to.be.lessThanOrEqual(aDayInMilliseconds);
+			expect(toSunday.getDay()).to.equal(0);
+			expect(toSunday.getHours()).to.equal(0);
+			expect(toSunday.getMinutes()).to.equal(0);
+			expect(toSunday.getSeconds()).to.equal(0);
+			expect(toSunday.getMilliseconds()).to.equal(0);
+			expect(toSunday.getDay()).to.equal(dateOnSunday.getDay());
+			expect(toSunday.getDate()).to.equal(dateOnSunday.getDate());
+		});
 	});
 });
