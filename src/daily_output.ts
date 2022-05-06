@@ -132,8 +132,60 @@ export class DailyOutput {
 
 		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
 		this.data.ranks.weekly.groupEffortRewards = [...top50Data, ...otherParticipantsData];
+		// updates the total rewards on week change
+		this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+			const prevTotal = this.data.ranks.total.groupEffortRewards.find(({ address: addr }) => addr === address);
+			if (prevTotal) {
+				const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+				this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
+			} else {
+				this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+			}
+		});
 
-		// TODO: determine total ranking
+		this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+			// weekly rewards
+			const prevWeekly = this.data.ranks.weekly.groupEffortRewards.find(({ address: addr }) => addr === address);
+			if (prevWeekly) {
+				const indexOfAddress = this.data.ranks.weekly.groupEffortRewards.indexOf(prevWeekly);
+				this.data.ranks.weekly.groupEffortRewards[indexOfAddress].rewards += rewards;
+			} else {
+				this.data.ranks.weekly.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+			}
+
+			// daily rewards
+			const prevDaily = this.data.ranks.weekly.groupEffortRewards.find(({ address: addr }) => addr === address);
+			if (prevDaily) {
+				const indexOfAddress = this.data.ranks.weekly.groupEffortRewards.indexOf(prevDaily);
+				this.data.ranks.weekly.groupEffortRewards[indexOfAddress].rewards += rewards;
+			} else {
+				this.data.ranks.weekly.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+			}
+		});
+
+		this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
+			.sort(({ address: address_1 }, { address: address_2 }) =>
+				tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
+			)
+			.map(({ address, rewards }, index) => {
+				return { address, rewards, rankPosition: index + 1 };
+			});
+
+		this.data.ranks.weekly.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards
+			.sort(({ address: address_1 }, { address: address_2 }) =>
+				tiebreakerSortFactory('weekly', this.data.wallets)(address_1, address_2)
+			)
+			.map(({ address, rewards }, index) => {
+				return { address, rewards, rankPosition: index + 1 };
+			});
+
+		this.data.ranks.daily.groupEffortRewards = this.data.ranks.daily.groupEffortRewards
+			.sort(({ address: address_1 }, { address: address_2 }) =>
+				tiebreakerSortFactory('weekly', this.data.wallets)(address_1, address_2)
+			)
+			.map(({ address, rewards }, index) => {
+				return { address, rewards, rankPosition: index + 1 };
+			});
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -193,23 +245,6 @@ export class DailyOutput {
 				tips: 0
 			};
 			this.data.ranks.lastWeek = this.data.ranks.weekly;
-			// updates the total rewards on week change
-			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
-				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
-					({ address: addr }) => addr === address
-				);
-				if (prevTotal) {
-					const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
-					this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
-				} else {
-					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
-				}
-			});
-			this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
-				.sort(({ address: address_1 }, { address: address_2 }) =>
-					tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
-				)
-				.map(({ address, rewards }, index) => ({ address, rewards, rankPosition: index + 1 }));
 			this.data.ranks.weekly = {
 				hasReachedMinimumGroupEffort: false,
 				groupEffortRewards: [],
