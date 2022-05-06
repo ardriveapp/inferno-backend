@@ -1,9 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { getLastTimestamp, tiebreakerSortFactory, validateTxTip } from './common';
-import Arweave from 'arweave';
-import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
-import { RedstoneContractReader } from './community/redstone_contract_reader';
-import { SmartweaveContractReader } from './community/smartweave_contract_oracle';
+import { validateTxTip, getLastTimestamp, tiebreakerSortFactory, ardriveOracle } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -19,18 +15,14 @@ import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './i
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
  */
 export class DailyOutput {
-	private readonly ardriveOracle = new ArDriveContractOracle([
-		new RedstoneContractReader(this.arweave),
-		new SmartweaveContractReader(this.arweave)
-	]);
+	private readonly ardriveOracle = ardriveOracle;
 	private readonly previousData = this.read();
 	private data = this.read();
-	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
 
-	constructor(private heightRange: [number, number], private readonly arweave: Arweave) {}
+	constructor(private heightRange: [number, number]) {}
 
 	/**
 	 * Takes the data from the previously generated data, fallbacking to the base template if not present
@@ -316,8 +308,7 @@ export class DailyOutput {
 			}
 		}
 
-		this.latestBlock = Math.max(this.latestBlock, node.block.height);
-		this.latestTimestamp = Math.max(this.latestTimestamp, node.block.timestamp);
+		this.latestTimestamp = node.block.timestamp;
 	};
 
 	private isNewESTDate(prev: Date, curr: Date): boolean {

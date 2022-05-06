@@ -1,10 +1,12 @@
 import fs from 'fs';
+import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
+import { RedstoneContractReader } from './community/redstone_contract_reader';
+import { SmartweaveContractReader } from './community/smartweave_contract_oracle';
 import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME } from './constants';
 import { WalletsStats } from './inferno_types';
 import Arweave from 'arweave';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
 import { GQLNodeInterface } from './gql_types';
-import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
 
 const EPSILON = 0.1;
 
@@ -80,6 +82,11 @@ export const arweave = Arweave.init({
 	protocol: defaultGatewayProtocol,
 	timeout: 600000
 });
+
+export const ardriveOracle = new ArDriveContractOracle([
+	new RedstoneContractReader(arweave),
+	new SmartweaveContractReader(arweave)
+]);
 
 export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDriveContractOracle): Promise<boolean> {
 	const tags = node.tags;

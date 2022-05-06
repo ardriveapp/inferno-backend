@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { existsSync, rmSync, writeFileSync } from 'fs';
 import Sinon from 'sinon';
-import { fakeArweave } from '../tests/stubs';
 import { expectAsyncErrorThrow } from '../tests/test_helpers';
 import { OUTPUT_NAME } from './constants';
 import { DailyOutput } from './daily_output';
@@ -74,7 +73,7 @@ const mockMalformedDailyOutput = {
 const mockMalformedStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(mockMalformedDailyOutput, null, '\t')}\n`;
 
 describe('DailyOutput class', () => {
-	const output = new DailyOutput([50, 100], fakeArweave);
+	const output = new DailyOutput([50, 100]);
 
 	describe('read method', () => {
 		before(() => {
