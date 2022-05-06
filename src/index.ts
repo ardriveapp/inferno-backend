@@ -50,7 +50,6 @@ function run(): void {
 async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promise<void> {
 	const minimumBlock = minBlock ?? getMinBlockHeight();
 	const maximumBlock = maxBlock ?? (await getBlockHeight());
-
 	const output = new DailyOutput([minimumBlock, maximumBlock]);
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);

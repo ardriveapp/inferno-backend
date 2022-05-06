@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { calculateTipPercentage, getLastTimestamp, tiebreakerSortFactory } from './common';
+import { validateTxTip, getLastTimestamp, tiebreakerSortFactory, ardriveOracle } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -15,9 +15,9 @@ import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './i
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
  */
 export class DailyOutput {
+	private readonly ardriveOracle = ardriveOracle;
 	private readonly previousData = this.read();
 	private data = this.read();
-	private latestBlock = 0;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
@@ -53,9 +53,10 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
-		queryResult.forEach(this.aggregateData);
-		return this.finishDataAggregation();
+	public async feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
+		const aggregationPromises = queryResult.map(this.aggregateData);
+		await Promise.all(aggregationPromises);
+		await this.finishDataAggregation();
 	}
 
 	/**
@@ -222,7 +223,7 @@ export class DailyOutput {
 	 * @param edge the edge result of the query
 	 * @throws if there's a bundled transaction with no bundle
 	 */
-	private aggregateData = (edge: GQLEdgeInterface): void => {
+	private aggregateData = async (edge: GQLEdgeInterface): Promise<void> => {
 		const node = edge.node;
 		const txId = node.id;
 		const ownerAddress = node.owner.address;
@@ -246,20 +247,19 @@ export class DailyOutput {
 			this.resetWeek();
 		}
 
-		const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
-		const fee = +node.fee.winston;
-		const tip = +node.quantity.winston;
-		const tipPercentage = calculateTipPercentage(fee, boostValue, tip);
+		const fee = node.fee.winston ? +node.fee.winston : undefined;
+		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
+		// we are using EPSILON here to have a minimum range of error acceptance
+		const isTipValid = await validateTxTip(node, this.ardriveOracle);
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
-		// we are using EPSILON here to have a minimum range of error acceptance
-		const isTipPercentageValid = !tip ? 0 : tipPercentage + Number.EPSILON >= 15;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
 		const isBundleTransaction = !!bundleVersion;
+
+		const bundledIn = node.bundledIn?.id;
 		if (isMetadataTransaction) {
 			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
-				const bundledIn = node.bundledIn?.id;
 				if (bundledIn) {
 					// track the file count of unbundled bundles
 					if (this.bundleFileCount[txId] === undefined) {
@@ -269,23 +269,28 @@ export class DailyOutput {
 				}
 				this.sumFile(ownerAddress);
 			}
-		} else if (isBundleTransaction) {
+		} else if (isBundleTransaction && tip && fee) {
 			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
-			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipPercentageValid) {
+			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipValid) {
 				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
 				this.sumSize(ownerAddress, dataSize);
-				this.sumTip(ownerAddress, +node.quantity.winston);
-			}
-		} else {
-			// it is file data transaction
+				this.sumTip(ownerAddress, tip);
 
+				// Set the block height once the minimum amount of data to participate is reached
+				if (
+					!this.data.wallets[ownerAddress].weekly.blockSinceParticipating &&
+					this.isParticipatingInGroupEffort(ownerAddress)
+				) {
+					this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
+				}
+			}
+		} else if (!bundledIn) {
+			// it is file data transaction
 			if (!tip) {
-				// TODO: check for the validity of the addres recieving the tip
 				// transactions with no tip are bundled transactions or invalid V2 transactions
 				return;
 			}
-
-			if (!isTipPercentageValid) {
+			if (!isTipValid) {
 				// invalid tips are discarded
 				return;
 			}
@@ -303,8 +308,7 @@ export class DailyOutput {
 			}
 		}
 
-		this.latestBlock = Math.max(this.latestBlock, node.block.height);
-		this.latestTimestamp = Math.max(this.latestTimestamp, node.block.timestamp);
+		this.latestTimestamp = node.block.timestamp;
 	};
 
 	private isNewESTDate(prev: Date, curr: Date): boolean {

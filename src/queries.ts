@@ -4,7 +4,7 @@ import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
 import { writeFileSync } from 'fs';
-import { getBlockHeight, gqlResultName } from './common';
+import { getBlockHeight, gqlResultName, ardriveOracle } from './common';
 
 const initialErrorDelayMS = 1000;
 
@@ -25,7 +25,7 @@ export async function getWalletsEligibleForStreak(): Promise<StakedPSTHolders> {
  */
 async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
 	const blockHeight = await getBlockHeight();
-	const communityOracle = new ArDriveCommunityOracle();
+	const communityOracle = new ArDriveCommunityOracle(ardriveOracle);
 	const vault = await communityOracle.getArdriveVaults();
 	const vaultAsArray = Object.entries(vault) as [string, Array<{ balance: number; start: number; end: number }>][];
 	const stakedForAtLeastOneMonth = vaultAsArray.map(([address, locks]) => [
@@ -67,24 +67,6 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 			const height = mostRecentTransaction.node.block.height;
 			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
 			prevBlock = height;
-			allEdges.push(...response.edges);
-			hasNextPage = response.pageInfo.hasNextPage;
-		} else {
-			hasNextPage = false;
-		}
-	}
-
-	return allEdges;
-}
-
-export async function getBundledTransactions(txIds: string[]): Promise<GQLEdgeInterface[]> {
-	const allEdges: GQLEdgeInterface[] = [];
-	let hasNextPage = true;
-
-	while (hasNextPage) {
-		const query = createBundledTxsQuery(txIds);
-		const response = await sendQuery(query);
-		if (response.edges.length) {
 			allEdges.push(...response.edges);
 			hasNextPage = response.pageInfo.hasNextPage;
 		} else {
@@ -179,6 +161,7 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							owner {
 								address
 							}
+							recipient
 							bundledIn {
 								id
 							}
@@ -193,57 +176,7 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							quantity {
 								winston
 							}
-							block {
-								timestamp
-								height
-							}
-						}
-					}
-				}
-			}`
-	};
-}
-
-/**
- */
-function createBundledTxsQuery(txIDs: string[]): Query {
-	// FIXME: use minBlock & maxBlock
-	return {
-		query: `
-			query {
-				transactions(
-					first: ${ITEMS_PER_REQUEST}
-					tags: [
-						{
-							name: "App-Name"
-							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
-						}
-					]
-					bundledIn: [${txIDs.map((txId) => `"${txId}"`)}]
-					sort: HEIGHT_ASC
-				) {
-					pageInfo {
-						hasNextPage
-					}
-					edges {
-						cursor
-						node {
-							id
-							owner {
-								address
-							}
-							bundledIn {
-								id
-							}
-							tags {
-								name
-								value
-							}
-							data {
-								size
-								type
-							}
-							quantity {
+							fee {
 								winston
 							}
 							block {

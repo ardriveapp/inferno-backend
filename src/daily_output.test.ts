@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { existsSync, rmSync, writeFileSync } from 'fs';
 import Sinon from 'sinon';
+import { expectAsyncErrorThrow } from '../tests/test_helpers';
 import { OUTPUT_NAME } from './constants';
 import { DailyOutput } from './daily_output';
 import { OutputData } from './inferno_types';
@@ -143,8 +144,8 @@ describe('DailyOutput class', () => {
 		});
 
 		it('Throws if the previous block height is ahead of some query result', () => {
-			expect(() =>
-				output.feedGQLData([
+			return expectAsyncErrorThrow({
+				promiseToError: output.feedGQLData([
 					{
 						cursor: '914100',
 						node: {
@@ -175,8 +176,9 @@ describe('DailyOutput class', () => {
 							}
 						}
 					}
-				])
-			).to.throw(undefined, 'That block was already processed!');
+				]),
+				errorMessage: 'That block was already processed!'
+			});
 		});
 	});
 });
