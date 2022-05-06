@@ -243,21 +243,6 @@ export class DailyOutput {
 			throw new Error('That block was already processed!');
 		}
 
-		const queryTimestamp = edge.node.block.timestamp * 1000;
-		const queryDate = new Date(queryTimestamp);
-		const previousTimestamp = this.latestTimestamp * 1000;
-		const previousDate = new Date(previousTimestamp);
-
-		const daysDiff = daysDiffInEST(previousDate, queryDate);
-		for (let index = 0; index < daysDiff; index++) {
-			this.resetDay();
-		}
-
-		const weeksDiff = weeksDiffInEST(previousDate, queryDate);
-		for (let index = 0; index < weeksDiff; index++) {
-			this.resetWeek();
-		}
-
 		const fee = node.fee.winston ? +node.fee.winston : undefined;
 		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
 		// we are using EPSILON here to have a minimum range of error acceptance
@@ -265,11 +250,31 @@ export class DailyOutput {
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
+		const isFileMetadata = entityTypeTag === 'file';
 		const isBundleTransaction = !!bundleVersion;
-
 		const bundledIn = node.bundledIn?.id;
+		const isV2DataTx = !isMetadataTransaction && !isBundleTransaction && !bundledIn;
+
+		if (fee && tip && isTipValid && (isV2DataTx || isBundleTransaction)) {
+			const queryTimestamp = edge.node.block.timestamp * 1000;
+			const queryDate = new Date(queryTimestamp);
+			const previousTimestamp = this.latestTimestamp * 1000;
+			const previousDate = new Date(previousTimestamp);
+
+			const daysDiff = daysDiffInEST(previousDate, queryDate);
+			for (let index = 0; index < daysDiff; index++) {
+				this.resetDay();
+			}
+
+			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
+			for (let index = 0; index < weeksDiff; index++) {
+				this.resetWeek();
+			}
+
+			this.latestTimestamp = node.block.timestamp;
+		}
+
 		if (isMetadataTransaction) {
-			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
 				if (bundledIn) {
 					// track the file count of unbundled bundles
@@ -318,8 +323,6 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
-
-		this.latestTimestamp = node.block.timestamp;
 	};
 
 	private isParticipatingInGroupEffort(address: string): boolean {
