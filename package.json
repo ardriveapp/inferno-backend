@@ -16,7 +16,7 @@
 		"lint": "eslint . --ext .ts",
 		"lintfix": "eslint . --ext .ts --fix",
 		"typecheck": "tsc --noemit",
-		"test": "nyc mocha",
+		"test": "TZ=UTC+5 nyc mocha",
 		"build": "yarn clean && tsc --project ./tsconfig.prod.json",
 		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w",
 		"prepare": "husky install"

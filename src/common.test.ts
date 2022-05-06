@@ -109,7 +109,7 @@ describe('common methods', () => {
 		});
 
 		it('returns a date in the same day if already on sunday', () => {
-			const dateOnSunday = new Date(1651374000003);
+			const dateOnSunday = new Date(1651381200003);
 			const toSunday = dateToSunday(dateOnSunday);
 			const diffInMilliseconds = dateOnSunday.getTime() - toSunday.getTime();
 
