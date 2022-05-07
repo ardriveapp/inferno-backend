@@ -100,3 +100,62 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 
 	return tipPercentage + EPSILON >= 15 && wasValidTipRecipient;
 }
+
+export function daysDiffInEST(prev: Date, curr: Date): number {
+	const prevEstDate = dateToEST(prev);
+	const currEstDate = dateToEST(curr);
+
+	let daysCount = 0;
+	const cursorDate = new Date(prevEstDate.getTime());
+	cursorDate.setHours(0);
+	cursorDate.setMinutes(0);
+	cursorDate.setSeconds(0);
+
+	while (currEstDate.getTime() > cursorDate.getTime()) {
+		const cursorDay = cursorDate.getDate();
+		cursorDate.setDate(cursorDay + 1);
+		if (cursorDate.getTime() < currEstDate.getTime()) {
+			daysCount++;
+		}
+	}
+	return daysCount;
+}
+
+export function weeksDiffInEST(prev: Date, curr: Date): number {
+	const prevEstDate = dateToEST(prev);
+	const currEstDate = dateToEST(curr);
+
+	let weeksCount = 0;
+	const cursorDate = dateToSunday(prevEstDate);
+
+	while (currEstDate.getTime() > cursorDate.getTime()) {
+		const cursorDay = cursorDate.getDate();
+		const daysPerWeek = 7;
+		cursorDate.setDate(cursorDay + daysPerWeek);
+		if (cursorDate.getTime() < currEstDate.getTime()) {
+			weeksCount++;
+		}
+	}
+	return weeksCount;
+}
+
+export function dateToSunday(date: Date) {
+	const dayOfWeek = date.getDay();
+	const newDate = new Date(date.getTime());
+	newDate.setDate(newDate.getDate() - dayOfWeek);
+	newDate.setHours(0);
+	newDate.setMinutes(0);
+	newDate.setSeconds(0);
+	newDate.setMilliseconds(0);
+	return newDate;
+}
+
+export function dateToEST(d: Date): Date {
+	const date = new Date(d.getTime());
+	const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
+	date.setMinutes(date.getMinutes() + offset); // date now in UTC time
+
+	const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
+	date.setMinutes(date.getMinutes() + easternTimeOffset);
+	return date;
+}
