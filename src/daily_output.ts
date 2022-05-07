@@ -75,6 +75,8 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
+		console.log(`Finish data aggregation!`);
+
 		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
@@ -118,29 +120,26 @@ export class DailyOutput {
 		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
 
-		const shuffledTies = groupEffortParticipants.sort(tiebreakerSortFactory('weekly', this.data.wallets));
-
-		shuffledTies.forEach((address, index) => {
-			this.data.wallets[address].daily.rankPosition = index + 1;
-			this.data.wallets[address].weekly.rankPosition = index + 1;
-		});
-
-		const top50 = shuffledTies.slice(0, 49);
-
-		const top50Data = top50.map((address, index) => {
-			return { address, rewards: GROUP_EFFORT_REWARDS[index], rankPosition: index + 1 };
-		});
-
-		const otherParticipantsData = otherParticipants
+		// updates the weekly/daily ranks and rewards
+		this.data.ranks.daily.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards = addresses
 			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
-			.map((address) => {
-				return { address, rewards: 0, rankPosition: 0 };
+			.map((address, index) => {
+				const rankPosition = index + 1;
+				const isInTop50 = rankPosition <= 50;
+				const rewards = hasReachedMinimumGroupEffort && isInTop50 ? GROUP_EFFORT_REWARDS[index] : 0;
+				console.log('Weekly and daily: ', { rankPosition, rewards, address });
+				return { address, rewards, rankPosition };
 			});
 
-		this.data.ranks.daily.groupEffortRewards = [...top50Data, ...otherParticipantsData];
-		this.data.ranks.weekly.groupEffortRewards = [...top50Data, ...otherParticipantsData];
-
-		// TODO: determine total ranking
+		// updates the total ranks
+		this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
+			.sort(({ address: address_1 }, { address: address_2 }) =>
+				tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
+			)
+			.map(({ address, rewards }, index) => {
+				console.log('Total only: ', { rankPosition: index + 1, rewards, address });
+				return { address, rewards, rankPosition: index + 1 };
+			});
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -199,8 +198,8 @@ export class DailyOutput {
 				tokensEarned: 0,
 				tips: 0
 			};
-			this.data.ranks.lastWeek = this.data.ranks.weekly;
-			// updates the total rewards on week change
+			console.log(`Resetting week`);
+			// updates the total rewards
 			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
 				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
 					({ address: addr }) => addr === address
@@ -212,11 +211,7 @@ export class DailyOutput {
 					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
 				}
 			});
-			this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
-				.sort(({ address: address_1 }, { address: address_2 }) =>
-					tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
-				)
-				.map(({ address, rewards }, index) => ({ address, rewards, rankPosition: index + 1 }));
+			this.data.ranks.lastWeek = this.data.ranks.weekly;
 			this.data.ranks.weekly = {
 				hasReachedMinimumGroupEffort: false,
 				groupEffortRewards: [],
@@ -323,6 +318,10 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
+
+		console.log(`Data aggregated`);
+
+		this.latestTimestamp = node.block.timestamp;
 	};
 
 	private isParticipatingInGroupEffort(address: string): boolean {
