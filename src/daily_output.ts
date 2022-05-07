@@ -1,5 +1,12 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { validateTxTip, getLastTimestamp, tiebreakerSortFactory, ardriveOracle } from './common';
+import {
+	validateTxTip,
+	getLastTimestamp,
+	tiebreakerSortFactory,
+	ardriveOracle,
+	daysDiffInEST,
+	weeksDiffInEST
+} from './common';
 import {
 	GROUP_EFFORT_REWARDS,
 	initialWalletStats,
@@ -227,17 +234,6 @@ export class DailyOutput {
 			throw new Error('That block was already processed!');
 		}
 
-		const queryTimestamp = edge.node.block.timestamp * 1000;
-		const queryDate = new Date(queryTimestamp);
-		const previousTimestamp = this.latestTimestamp * 1000;
-		const previousDate = new Date(previousTimestamp);
-		if (this.isNewESTDate(previousDate, queryDate)) {
-			this.resetDay();
-		}
-		if (this.isNewESTWeek(previousDate, queryDate)) {
-			this.resetWeek();
-		}
-
 		const fee = node.fee.winston ? +node.fee.winston : undefined;
 		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
 		// we are using EPSILON here to have a minimum range of error acceptance
@@ -245,11 +241,31 @@ export class DailyOutput {
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
 		const isMetadataTransaction = !!entityTypeTag && !bundleVersion;
+		const isFileMetadata = entityTypeTag === 'file';
 		const isBundleTransaction = !!bundleVersion;
-
 		const bundledIn = node.bundledIn?.id;
+		const isV2DataTx = !isMetadataTransaction && !isBundleTransaction && !bundledIn;
+
+		if (fee && tip && isTipValid && (isV2DataTx || isBundleTransaction)) {
+			const queryTimestamp = edge.node.block.timestamp * 1000;
+			const queryDate = new Date(queryTimestamp);
+			const previousTimestamp = this.latestTimestamp * 1000;
+			const previousDate = new Date(previousTimestamp);
+
+			const daysDiff = daysDiffInEST(previousDate, queryDate);
+			for (let index = 0; index < daysDiff; index++) {
+				this.resetDay();
+			}
+
+			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
+			for (let index = 0; index < weeksDiff; index++) {
+				this.resetWeek();
+			}
+
+			this.latestTimestamp = node.block.timestamp;
+		}
+
 		if (isMetadataTransaction) {
-			const isFileMetadata = entityTypeTag === 'file';
 			if (isFileMetadata) {
 				if (bundledIn) {
 					// track the file count of unbundled bundles
@@ -298,29 +314,7 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
-
-		this.latestTimestamp = node.block.timestamp;
 	};
-
-	private isNewESTDate(prev: Date, curr: Date): boolean {
-		const isNewDay = this.dateToEST(prev).getDate() !== this.dateToEST(curr).getDate();
-		return isNewDay;
-	}
-
-	private isNewESTWeek(prev: Date, curr: Date): boolean {
-		const isNewDay = this.dateToEST(prev).getDay() !== this.dateToEST(curr).getDay();
-		return isNewDay;
-	}
-
-	private dateToEST(d: Date): Date {
-		const date = new Date(d.getTime());
-		const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
-		date.setMinutes(date.getMinutes() + offset); // date now in UTC time
-
-		const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
-		date.setMinutes(date.getMinutes() + easternTimeOffset);
-		return date;
-	}
 
 	private isParticipatingInGroupEffort(address: string): boolean {
 		const currentByteCount = this.data.wallets[address].weekly.byteCount;
