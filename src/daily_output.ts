@@ -54,8 +54,9 @@ export class DailyOutput {
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
 	public async feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
-		const aggregationPromises = queryResult.map(this.aggregateData);
-		await Promise.all(aggregationPromises);
+		for (const edge of queryResult) {
+			await this.aggregateData(edge);
+		}
 		await this.finishDataAggregation();
 	}
 
@@ -68,8 +69,6 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
-		console.log(`Finish data aggregation!`);
-
 		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
@@ -120,7 +119,6 @@ export class DailyOutput {
 				const rankPosition = index + 1;
 				const isInTop50 = rankPosition <= 50;
 				const rewards = hasReachedMinimumGroupEffort && isInTop50 ? GROUP_EFFORT_REWARDS[index] : 0;
-				console.log('Weekly and daily: ', { rankPosition, rewards, address });
 				return { address, rewards, rankPosition };
 			});
 
@@ -130,7 +128,6 @@ export class DailyOutput {
 				tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
 			)
 			.map(({ address, rewards }, index) => {
-				console.log('Total only: ', { rankPosition: index + 1, rewards, address });
 				return { address, rewards, rankPosition: index + 1 };
 			});
 
@@ -191,7 +188,6 @@ export class DailyOutput {
 				tokensEarned: 0,
 				tips: 0
 			};
-			console.log(`Resetting week`);
 			// updates the total rewards
 			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
 				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
@@ -302,8 +298,6 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
-
-		console.log(`Data aggregated`);
 
 		this.latestTimestamp = node.block.timestamp;
 	};
