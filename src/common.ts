@@ -26,19 +26,19 @@ export async function getBlockHeight(): Promise<number> {
 	return (_cachedBlockHeight = blockHeight);
 }
 
-export function getMinBlockHeight(): number {
-	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
+export function hasOutputFile(): boolean {
+	return fs.existsSync(OUTPUT_NAME);
+}
 
-	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
+export function getMinBlockHeight(): number {
+	const fileToCheck = hasOutputFile() ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
 
 	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
 	return file.blockHeight + 1;
 }
 
 export function getLastTimestamp(): number {
-	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
-
-	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
+	const fileToCheck = hasOutputFile() ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
 
 	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
 	return file.timestamp;
