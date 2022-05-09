@@ -5,7 +5,7 @@ import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
 import { getBlockHeight, ardriveOracle } from './common';
-import { GQLCache } from './gqlCache';
+import { GQLCache } from './gql_cache';
 
 const initialErrorDelayMS = 1000;
 

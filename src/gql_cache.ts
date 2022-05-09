@@ -1,5 +1,7 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { GQLEdgeInterface } from './gql_types';
+
+const CACHE_FOLDER = './cache';
 
 // TODO: ensure no duplicated edges
 
@@ -16,6 +18,9 @@ export class GQLCache {
 			(edge_a, edge_b) => edge_a.node.block.height - edge_b.node.block.height
 		);
 		const stringifiedEdges = JSON.stringify(sortedEdges);
+		if (!this.cacheFolderExists) {
+			mkdirSync(CACHE_FOLDER);
+		}
 		writeFileSync(this.filePath, stringifiedEdges);
 	}
 
@@ -32,10 +37,18 @@ export class GQLCache {
 	}
 
 	public get exists(): boolean {
+		return this.cacheFolderExists && this.cacheFileExists;
+	}
+
+	public get cacheFolderExists(): boolean {
+		return existsSync(CACHE_FOLDER);
+	}
+
+	public get cacheFileExists(): boolean {
 		return existsSync(this.filePath);
 	}
 
 	private get filePath(): string {
-		return `./gql_cache_${this.minBlock}-${this.maxBlock}.json`;
+		return `${CACHE_FOLDER}/gql_cache_${this.minBlock}-${this.maxBlock}.json`;
 	}
 }
