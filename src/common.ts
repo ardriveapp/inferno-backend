@@ -110,6 +110,7 @@ export function daysDiffInEST(prev: Date, curr: Date): number {
 	cursorDate.setHours(0);
 	cursorDate.setMinutes(0);
 	cursorDate.setSeconds(0);
+	cursorDate.setMilliseconds(0);
 
 	while (currEstDate.getTime() > cursorDate.getTime()) {
 		const cursorDay = cursorDate.getDate();
@@ -118,6 +119,11 @@ export function daysDiffInEST(prev: Date, curr: Date): number {
 			daysCount++;
 		}
 	}
+
+	if (daysCount) {
+		console.log(`Difference in days between ${prevEstDate} and ${currEstDate}: ${daysCount}`);
+	}
+
 	return daysCount;
 }
 
@@ -136,6 +142,11 @@ export function weeksDiffInEST(prev: Date, curr: Date): number {
 			weeksCount++;
 		}
 	}
+
+	if (weeksCount) {
+		console.log(`Difference in weeks between ${prevEstDate} and ${currEstDate}: ${weeksCount}`);
+	}
+
 	return weeksCount;
 }
 

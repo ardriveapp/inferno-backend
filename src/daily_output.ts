@@ -173,12 +173,12 @@ export class DailyOutput {
 				tokensEarned: 0,
 				tips: 0
 			};
-			this.data.ranks.daily = {
-				hasReachedMinimumGroupEffort: false,
-				groupEffortRewards: [],
-				streakRewards: []
-			};
 		}
+		this.data.ranks.daily = {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		};
 	}
 
 	/**
@@ -195,25 +195,23 @@ export class DailyOutput {
 				tokensEarned: 0,
 				tips: 0
 			};
-			// updates the total rewards
-			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
-				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
-					({ address: addr }) => addr === address
-				);
-				if (prevTotal) {
-					const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
-					this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
-				} else {
-					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
-				}
-			});
-			this.data.ranks.lastWeek = this.data.ranks.weekly;
-			this.data.ranks.weekly = {
-				hasReachedMinimumGroupEffort: false,
-				groupEffortRewards: [],
-				streakRewards: []
-			};
 		}
+		// updates the total rewards
+		this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+			const prevTotal = this.data.ranks.total.groupEffortRewards.find(({ address: addr }) => addr === address);
+			if (prevTotal) {
+				const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+				this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
+			} else {
+				this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+			}
+		});
+		this.data.ranks.lastWeek = this.data.ranks.weekly;
+		this.data.ranks.weekly = {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		};
 	}
 
 	/**
@@ -254,11 +252,13 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
+				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
+				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
 				this.resetWeek();
 			}
 
