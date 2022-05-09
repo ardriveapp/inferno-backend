@@ -164,16 +164,24 @@ export class DailyOutput {
 	 */
 	private resetDay(): void {
 		for (const address in this.data.wallets) {
-			this.data.wallets[address].yesterday = this.data.wallets[address].daily;
-			this.data.wallets[address].daily = {
-				byteCount: 0,
-				changeInPercentage: 0,
-				fileCount: 0,
-				rankPosition: 0,
-				tokensEarned: 0,
-				tips: 0
-			};
+			this.resetWalletDay(address);
 		}
+		this.resetRanksDay();
+	}
+
+	private resetWalletDay(address: string): void {
+		this.data.wallets[address].yesterday = this.data.wallets[address].daily;
+		this.data.wallets[address].daily = {
+			byteCount: 0,
+			changeInPercentage: 0,
+			fileCount: 0,
+			rankPosition: 0,
+			tokensEarned: 0,
+			tips: 0
+		};
+	}
+
+	private resetRanksDay(): void {
 		this.data.ranks.daily = {
 			hasReachedMinimumGroupEffort: false,
 			groupEffortRewards: [],
@@ -186,17 +194,25 @@ export class DailyOutput {
 	 */
 	private resetWeek(): void {
 		for (const address in this.data.wallets) {
-			this.data.wallets[address].lastWeek = this.data.wallets[address].weekly;
-			this.data.wallets[address].weekly = {
-				byteCount: 0,
-				changeInPercentage: 0,
-				fileCount: 0,
-				rankPosition: 0,
-				tokensEarned: 0,
-				tips: 0
-			};
+			this.resetWalletWeek(address);
 		}
-		// updates the total rewards
+		this.updateWeeklyRewards();
+		this.resetRanksWeek();
+	}
+
+	private resetWalletWeek(address: string): void {
+		this.data.wallets[address].lastWeek = this.data.wallets[address].weekly;
+		this.data.wallets[address].weekly = {
+			byteCount: 0,
+			changeInPercentage: 0,
+			fileCount: 0,
+			rankPosition: 0,
+			tokensEarned: 0,
+			tips: 0
+		};
+	}
+
+	private updateWeeklyRewards(): void {
 		this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
 			const prevTotal = this.data.ranks.total.groupEffortRewards.find(({ address: addr }) => addr === address);
 			if (prevTotal) {
@@ -206,6 +222,9 @@ export class DailyOutput {
 				this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
 			}
 		});
+	}
+
+	private resetRanksWeek(): void {
 		this.data.ranks.lastWeek = this.data.ranks.weekly;
 		this.data.ranks.weekly = {
 			hasReachedMinimumGroupEffort: false,
