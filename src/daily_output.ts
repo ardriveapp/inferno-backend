@@ -263,7 +263,7 @@ export class DailyOutput {
 		const bundledIn = node.bundledIn?.id;
 		const isV2DataTx = !isMetadataTransaction && !isBundleTransaction && !bundledIn;
 
-		if (fee && tip && isTipValid && (isV2DataTx || isBundleTransaction)) {
+		if (fee && isTipValid && (isV2DataTx || isBundleTransaction)) {
 			const queryTimestamp = edge.node.block.timestamp * 1000;
 			const queryDate = new Date(queryTimestamp);
 			const previousTimestamp = this.latestTimestamp * 1000;
