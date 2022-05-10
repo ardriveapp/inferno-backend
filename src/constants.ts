@@ -24,3 +24,7 @@ export const initialWalletStats = (): WalletStatEntry => {
 	};
 };
 export const UPLOAD_DATA_TIP_TYPE = 'data upload';
+export const APP_NAME_TAG = 'App-Name';
+export const BOOST_TAG = 'Boost';
+export const APP_VERSION_TAG = 'App-Version';
+export const WEB_APP_NAME = 'ArDrive-Web';
