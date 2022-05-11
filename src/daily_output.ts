@@ -76,6 +76,8 @@ export class DailyOutput {
 	 * - streak rewards
 	 */
 	private async finishDataAggregation(): Promise<void> {
+		console.log(`Finishing data aggregation...`);
+
 		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
@@ -279,6 +281,10 @@ export class DailyOutput {
 			for (let index = 0; index < weeksDiff; index++) {
 				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
 				this.resetWeek();
+			}
+
+			if (this.latestTimestamp !== node.block.timestamp) {
+				console.log(`Timestamp: ${node.block.timestamp}, block: ${node.block.height}`);
 			}
 
 			this.latestTimestamp = node.block.timestamp;

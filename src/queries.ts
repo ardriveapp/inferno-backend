@@ -1,11 +1,10 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
-// import Axios from 'axios';
-import fetch from 'node-fetch';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
-import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
+import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, TIMEOUT, VALID_APP_NAMES } from './constants';
 import { getBlockHeight, ardriveOracle } from './common';
 import { GQLCache } from './gql_cache';
+import fetch from './utils/fetch_with_timeout';
 
 const initialErrorDelayMS = 1000;
 
@@ -68,8 +67,18 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 		const edges = response.edges;
 		hasNextPage = response.pageInfo.hasNextPage;
 		if (edges.length) {
-			const mostRecentTransaction = response.edges[response.edges.length - 1];
-			cursor = mostRecentTransaction.cursor;
+			const oldestTransaction = response.edges[response.edges.length - 1];
+			const mostRecentTransaction = response.edges[0];
+			if (oldestTransaction.node.block.height > mostRecentTransaction.node.block.height) {
+				throw new Error(
+					`Wrongly calculating heights: oldest ${oldestTransaction.node.block.height}, recent ${mostRecentTransaction.node.block.height}`
+				);
+			}
+			cursor = oldestTransaction.cursor;
+			console.log(
+				`Fetched block range ${oldestTransaction.node.block.height}-${mostRecentTransaction.node.block.height}`,
+				{ cursor }
+			);
 			await cache.addEdges(edges);
 		}
 	}
@@ -95,18 +104,22 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 		}
 
 		try {
-			const response = await fetch(GQL_URL, {
-				method: 'POST',
-				headers: {
-					'Accept-Encoding': 'gzip, deflate, br',
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					Connection: 'keep-alive',
-					DNT: '1',
-					Origin: GQL_URL
+			const response = await fetch(
+				GQL_URL,
+				{
+					method: 'POST',
+					headers: {
+						'Accept-Encoding': 'gzip, deflate, br',
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						Connection: 'keep-alive',
+						DNT: '1',
+						Origin: GQL_URL
+					},
+					body: JSON.stringify(query)
 				},
-				body: JSON.stringify(query)
-			});
+				TIMEOUT
+			);
 
 			responseOk = response.ok;
 
