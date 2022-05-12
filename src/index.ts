@@ -5,12 +5,22 @@ import { DailyOutput } from './daily_output';
 import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './queries';
 import { getBlockHeight, getMinBlockHeight } from './common';
 import { distributeTokens } from './distribute';
+import { LoggerFactory } from 'redstone-smartweave';
 
 /**
  * A Python-like approach to determine if the JS code is running this exact module, and not being imported
  * 🐍🐍🐍
  */
 if (require.main === module) {
+	// supress the redstone debug logging
+	LoggerFactory.INST.setOptions({
+		type: 'json',
+		displayFilePath: 'hidden',
+		displayInstanceName: false,
+		minLevel: 'error'
+	});
+
+	// run the main method
 	run();
 } else {
 	throw new Error('This module should not be imported');

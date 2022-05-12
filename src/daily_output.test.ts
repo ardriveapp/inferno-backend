@@ -91,9 +91,9 @@ describe('DailyOutput class', () => {
 		it('return the template if the file is not present', () => {
 			expect(output.readOutputFile).to.throw();
 			expect(output.read()).to.deep.equal({
-				blockHeight: 924390,
-				lastUpdated: 1651377504000,
-				timestamp: 1651377504,
+				blockHeight: 924391,
+				lastUpdated: 1651377645000,
+				timestamp: 1651377645,
 				PSTHolders: {},
 				wallets: {},
 				ranks: {

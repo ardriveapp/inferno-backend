@@ -1,10 +1,11 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
-import Axios from 'axios';
+// import Axios from 'axios';
+import fetch from 'node-fetch';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
-import { writeFileSync } from 'fs';
-import { getBlockHeight, gqlResultName, ardriveOracle } from './common';
+import { getBlockHeight, ardriveOracle } from './common';
+import { GQLCache } from './gql_cache';
 
 const initialErrorDelayMS = 1000;
 
@@ -51,29 +52,29 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
  */
 export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
-	const allEdges: GQLEdgeInterface[] = [];
-
-	const blockHeight = await getBlockHeight();
-	const trustedHeight = blockHeight - 50;
+	const cache = new GQLCache(minBlock, maxBlock);
+	if (cache.exists) {
+		// early return from cache
+		// note: it will only return here if the block range is EXACTLY the same
+		return await cache.getEdges();
+	}
 
 	let hasNextPage = true;
-	let prevBlock = minBlock - 1;
+	let cursor = '';
 
 	while (hasNextPage) {
-		const query = createQuery(prevBlock + 1, Math.min(maxBlock, trustedHeight));
+		const query = createQuery(minBlock, maxBlock, cursor);
 		const response = await sendQuery(query);
-		if (response.edges.length) {
+		const edges = response.edges;
+		hasNextPage = response.pageInfo.hasNextPage;
+		if (edges.length) {
 			const mostRecentTransaction = response.edges[response.edges.length - 1];
-			const height = mostRecentTransaction.node.block.height;
-			writeFileSync(gqlResultName(prevBlock + 1, height), JSON.stringify(response.edges));
-			prevBlock = height;
-			allEdges.push(...response.edges);
-			hasNextPage = response.pageInfo.hasNextPage;
-		} else {
-			hasNextPage = false;
+			cursor = mostRecentTransaction.cursor;
+			await cache.addEdges(edges);
 		}
 	}
 
+	const allEdges = await cache.getEdges();
 	return allEdges;
 }
 
@@ -84,7 +85,6 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
  * @returns {GQLTransactionsResultInterface} the returned transactions
  */
 async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
-	// TODO: implement retry here
 	let pendingRetries = MAX_RETRIES;
 	let responseOk: boolean | undefined;
 
@@ -95,9 +95,8 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 		}
 
 		try {
-			const response = await Axios.request({
+			const response = await fetch(GQL_URL, {
 				method: 'POST',
-				url: GQL_URL,
 				headers: {
 					'Accept-Encoding': 'gzip, deflate, br',
 					'Content-Type': 'application/json',
@@ -106,17 +105,21 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 					DNT: '1',
 					Origin: GQL_URL
 				},
-				data: JSON.stringify(query)
+				body: JSON.stringify(query)
 			});
-			responseOk = response.status >= 200 && response.status < 300;
 
-			const JSONBody = response.data;
-			const errors: { message: string; extensions: { code: string } } = !JSONBody.data && JSONBody.errors;
+			responseOk = response.ok;
+
+			const JSONBody = (await response.json()) as {
+				errors: { message: string; extensions: { code: string } };
+				data: { transactions: GQLTransactionsResultInterface };
+			};
+			const errors = !JSONBody.data && JSONBody.errors;
 			if (errors) {
 				pendingRetries--;
 				continue;
 			}
-			return JSONBody.data.transactions as GQLTransactionsResultInterface;
+			return JSONBody.data.transactions;
 		} catch (e) {
 			pendingRetries--;
 			continue;
@@ -136,7 +139,7 @@ async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promis
  * @param maxBlock an integer representing the block until where to query the data
  * @returns
  */
-function createQuery(minBlock: number, maxBlock: number): Query {
+function createQuery(minBlock: number, maxBlock: number, cursor = ''): Query {
 	return {
 		query: `
 			query {
@@ -149,7 +152,8 @@ function createQuery(minBlock: number, maxBlock: number): Query {
 							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
 						}
 					]
-					sort: HEIGHT_ASC
+					sort: HEIGHT_DESC
+					after: "${cursor}"
 				) {
 					pageInfo {
 						hasNextPage

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { calculateTipPercentage, dateToSunday, daysDiffInEST, validateTxTip, weeksDiffInEST } from './common';
+import { calculateTipPercentage, dateToSunday, daysDiffInEST, isSemanticVersionGreaterThan, validateTxTip, weeksDiffInEST } from './common';
 import { stub } from 'sinon';
 import { mockAddressRecipient, mockHeight, stubArdriveOracle, stubTxNode } from '../tests/stubs';
 
@@ -122,5 +122,29 @@ describe('common methods', () => {
 			expect(toSunday.getDay()).to.equal(dateOnSunday.getDay());
 			expect(toSunday.getDate()).to.equal(dateOnSunday.getDate());
 		});
+	});
+
+	describe('isSemanticVersionGreaterThan method', () => {
+		const v1_14_1 = '1.14.1';
+		const v1_14_0 = '1.14.0';
+		const v1_15_0 = '1.15.0';
+
+		it('returns true if the first version is greater than the latter', () => {
+			expect(isSemanticVersionGreaterThan(v1_15_0, v1_14_1)).to.be.true;
+			expect(isSemanticVersionGreaterThan(v1_15_0, v1_14_0)).to.be.true;
+			expect(isSemanticVersionGreaterThan(v1_14_1, v1_14_0)).to.be.true;
+		});
+
+		it('returns false if the first version is less than the latter', () => {
+			expect(isSemanticVersionGreaterThan(v1_14_1, v1_15_0)).to.be.false;
+			expect(isSemanticVersionGreaterThan(v1_14_0, v1_15_0)).to.be.false;
+			expect(isSemanticVersionGreaterThan(v1_14_0, v1_14_1)).to.be.false;
+		});
+
+		it('returns false if the values are the same', () => {
+			expect(isSemanticVersionGreaterThan(v1_14_0, v1_14_0)).to.be.false;
+			expect(isSemanticVersionGreaterThan(v1_14_1, v1_14_1)).to.be.false;
+			expect(isSemanticVersionGreaterThan(v1_15_0, v1_15_0)).to.be.false;
+		})
 	});
 });
