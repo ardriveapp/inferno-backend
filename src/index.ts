@@ -4,6 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { DailyOutput } from './daily_output';
 import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './queries';
 import { getBlockHeight, getMinBlockHeight } from './common';
+import { distributeTokens } from './distribute';
 
 /**
  * A Python-like approach to determine if the JS code is running this exact module, and not being imported
@@ -19,25 +20,41 @@ if (require.main === module) {
  * The main method. It handles the CLI commands and parameters
  */
 function run(): void {
-	yargs(hideBin(process.argv)).command(
-		'aggregate [minBlock] [maxBlock]',
-		'Aggregates data into the output file',
-		(yargs) => {
-			return yargs
-				.positional('minBlock', {
-					describe: 'The block from where to start the query',
-					type: 'number'
-				})
-				.positional('maxBlock', {
-					describe: 'The last block to query',
-					type: 'number'
+	yargs(hideBin(process.argv))
+		.command(
+			'aggregate [minBlock] [maxBlock]',
+			'Aggregates data into the output file',
+			(yargs) => {
+				return yargs
+					.positional('minBlock', {
+						describe: 'The block from where to start the query',
+						type: 'number'
+					})
+					.positional('maxBlock', {
+						describe: 'The last block to query',
+						type: 'number'
+					});
+			},
+			(argv) => {
+				const { minBlock, maxBlock } = argv;
+				aggregateOutputData(minBlock, maxBlock);
+			}
+		)
+		.command(
+			'distribute',
+			'Distribute weekly rewards',
+			(yargs) => {
+				return yargs.option('confirm', {
+					describe: 'confirm the token distribution',
+					default: false,
+					type: 'boolean'
 				});
-		},
-		(argv) => {
-			const { minBlock, maxBlock } = argv;
-			aggregateOutputData(minBlock, maxBlock);
-		}
-	);
+			},
+			(argv) => {
+				const { confirm } = argv;
+				distributeTokens(confirm);
+			}
+		);
 
 	yargs.parse();
 }

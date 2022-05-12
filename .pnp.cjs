@@ -38,6 +38,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/sinon", "npm:10.0.11"],\
+            ["@types/sinon-chai", "npm:3.2.8"],\
             ["@types/yargs", "npm:17.0.10"],\
             ["@typescript-eslint/eslint-plugin", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:5.20.0"],\
             ["@typescript-eslint/parser", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:5.20.0"],\
@@ -56,6 +57,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["redstone-smartweave", "npm:0.4.78"],\
             ["rimraf", "npm:3.0.2"],\
             ["sinon", "npm:13.0.2"],\
+            ["sinon-chai", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:3.7.0"],\
             ["smartweave", "npm:0.4.48"],\
             ["ts-node", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:10.7.0"],\
             ["typescript", "patch:typescript@npm%3A4.6.3#~builtin<compat/typescript>::version=4.6.3&hash=bda367"],\
@@ -782,6 +784,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@types/sinon", "npm:10.0.11"],\
             ["@types/sinonjs__fake-timers", "npm:8.1.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@types/sinon-chai", [\
+        ["npm:3.2.8", {\
+          "packageLocation": "./.yarn/cache/@types-sinon-chai-npm-3.2.8-0ae345a434-a0f7a8cef2.zip/node_modules/@types/sinon-chai/",\
+          "packageDependencies": [\
+            ["@types/sinon-chai", "npm:3.2.8"],\
+            ["@types/chai", "npm:4.3.1"],\
+            ["@types/sinon", "npm:10.0.11"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -3765,6 +3778,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
             ["@types/sinon", "npm:10.0.11"],\
+            ["@types/sinon-chai", "npm:3.2.8"],\
             ["@types/yargs", "npm:17.0.10"],\
             ["@typescript-eslint/eslint-plugin", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:5.20.0"],\
             ["@typescript-eslint/parser", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:5.20.0"],\
@@ -3783,6 +3797,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["redstone-smartweave", "npm:0.4.78"],\
             ["rimraf", "npm:3.0.2"],\
             ["sinon", "npm:13.0.2"],\
+            ["sinon-chai", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:3.7.0"],\
             ["smartweave", "npm:0.4.48"],\
             ["ts-node", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:10.7.0"],\
             ["typescript", "patch:typescript@npm%3A4.6.3#~builtin<compat/typescript>::version=4.6.3&hash=bda367"],\
@@ -6080,6 +6095,32 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["diff", "npm:5.0.0"],\
             ["nise", "npm:5.1.1"],\
             ["supports-color", "npm:7.2.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["sinon-chai", [\
+        ["npm:3.7.0", {\
+          "packageLocation": "./.yarn/cache/sinon-chai-npm-3.7.0-8e6588805e-49a353d8eb.zip/node_modules/sinon-chai/",\
+          "packageDependencies": [\
+            ["sinon-chai", "npm:3.7.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:3.7.0", {\
+          "packageLocation": "./.yarn/__virtual__/sinon-chai-virtual-ac4234627e/0/cache/sinon-chai-npm-3.7.0-8e6588805e-49a353d8eb.zip/node_modules/sinon-chai/",\
+          "packageDependencies": [\
+            ["sinon-chai", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:3.7.0"],\
+            ["@types/chai", "npm:4.3.1"],\
+            ["@types/sinon", "npm:10.0.11"],\
+            ["chai", "npm:4.3.6"],\
+            ["sinon", "npm:13.0.2"]\
+          ],\
+          "packagePeers": [\
+            "@types/chai",\
+            "@types/sinon",\
+            "chai",\
+            "sinon"\
           ],\
           "linkType": "HARD"\
         }]\
