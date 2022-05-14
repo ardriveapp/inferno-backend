@@ -5,6 +5,7 @@ import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, TIMEOUT, VAL
 import { getBlockHeight, ardriveOracle } from './common';
 import { GQLCache } from './gql_cache';
 import fetch from './utils/fetch_with_timeout';
+import { HeightRange } from './height_range';
 
 const initialErrorDelayMS = 1000;
 
@@ -50,40 +51,49 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  * @param maxBlock an integer representing the block until where to query the data
  * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
  */
-export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
-	const cache = new GQLCache(minBlock, maxBlock);
-	if (cache.exists) {
-		// early return from cache
-		// note: it will only return here if the block range is EXACTLY the same
-		return await cache.getEdges();
-	}
+export async function getAllArDriveTransactionsWithin(range: HeightRange): Promise<GQLEdgeInterface[]> {
+	const cache = new GQLCache(range);
+	const nonCachedRanges = cache.getNonCachedRangesWithin();
 
-	let hasNextPage = true;
-	let cursor = '';
+	console.log(`Ranges to query:`, { nonCachedRanges });
 
-	while (hasNextPage) {
-		const query = createQuery(minBlock, maxBlock, cursor);
-		const response = await sendQuery(query);
-		const edges = response.edges;
-		hasNextPage = response.pageInfo.hasNextPage;
-		if (edges.length) {
-			const oldestTransaction = response.edges[response.edges.length - 1];
-			const mostRecentTransaction = response.edges[0];
-			if (oldestTransaction.node.block.height > mostRecentTransaction.node.block.height) {
-				throw new Error(
-					`Wrongly calculating heights: oldest ${oldestTransaction.node.block.height}, recent ${mostRecentTransaction.node.block.height}`
-				);
+	for (const nonCachedRange of nonCachedRanges) {
+		let hasNextPage = true;
+		let cursor = '';
+		let heightCursor = nonCachedRange.max;
+
+		while (hasNextPage) {
+			const query = createQuery(nonCachedRange, cursor);
+			const response = await sendQuery(query);
+			const edges = response.edges;
+			hasNextPage = response.pageInfo.hasNextPage;
+			if (!edges.length) {
+				throw new Error('GQL responded an empty result');
 			}
-			cursor = oldestTransaction.cursor;
-			console.log(
-				`Fetched block range ${oldestTransaction.node.block.height}-${mostRecentTransaction.node.block.height}`,
-				{ cursor }
+			console.log(JSON.stringify(edges));
+			const oldestTransaction = edges[edges.length - 1];
+			const mostRecentTransaction = edges[0];
+			console.log('Responded range ', {
+				oldest: oldestTransaction.node.block.height,
+				recent: mostRecentTransaction.node.block.height
+			});
+			const fetchedRange = new HeightRange(
+				oldestTransaction.node.block.height,
+				mostRecentTransaction.node.block.height
 			);
-			await cache.addEdges(edges);
+			console.log('Responded range ', { fetchedRange });
+			cursor = oldestTransaction.cursor;
+			const oldestHeight = oldestTransaction.node.block.height;
+			console.log('The height cursor ', { oldestHeight, heightCursor });
+			await cache.addEdges(
+				edges,
+				new HeightRange(oldestHeight, Math.max(heightCursor - 1, mostRecentTransaction.node.block.height))
+			);
+			heightCursor = oldestHeight;
 		}
 	}
 
-	const allEdges = await cache.getEdges();
+	const allEdges = await cache.getAllEdgesWithinRange();
 	return allEdges;
 }
 
@@ -132,6 +142,7 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 				pendingRetries--;
 				continue;
 			}
+			console.log({ txCount: JSONBody.data.transactions.edges.length });
 			return JSONBody.data.transactions;
 		} catch (e) {
 			pendingRetries--;
@@ -152,12 +163,12 @@ async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promis
  * @param maxBlock an integer representing the block until where to query the data
  * @returns
  */
-function createQuery(minBlock: number, maxBlock: number, cursor = ''): Query {
+function createQuery(range: HeightRange, cursor = ''): Query {
 	return {
 		query: `
 			query {
 				transactions(
-					block: { max: ${maxBlock}, min: ${minBlock} }
+					block: { min: ${range.min}, max: ${range.max} }
 					first: ${ITEMS_PER_REQUEST}
 					tags: [
 						{

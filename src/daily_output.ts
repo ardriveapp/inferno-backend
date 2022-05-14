@@ -96,14 +96,14 @@ export class DailyOutput {
 			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
 			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
 			const changeInPercentageDaily = this.changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
-			this.data.wallets[address].daily.changeInPercentage = changeInPercentageDaily;
+			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageDaily.toFixed(2);
 
 			// weekly change
 			const uploadedDataLastWeek = this.data.wallets[address].yesterday.byteCount;
 			const uploadedDataCurrentWeek = this.data.wallets[address].daily.byteCount;
 			const changeInPercentageWeekly =
 				this.changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
-			this.data.wallets[address].daily.changeInPercentage = changeInPercentageWeekly;
+			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
 		});
 
 		// check if the minimum group effort was reached
@@ -132,11 +132,10 @@ export class DailyOutput {
 			});
 
 		// updates the total ranks
-		this.data.ranks.total.groupEffortRewards = this.data.ranks.total.groupEffortRewards
-			.sort(({ address: address_1 }, { address: address_2 }) =>
-				tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2)
-			)
-			.map(({ address, rewards }, index) => {
+		this.data.ranks.total.groupEffortRewards = addresses
+			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
+			.map((address, index) => {
+				const rewards = this.data.ranks.total.groupEffortRewards[index].rewards;
 				return { address, rewards, rankPosition: index + 1 };
 			});
 
@@ -198,7 +197,7 @@ export class DailyOutput {
 		for (const address in this.data.wallets) {
 			this.resetWalletWeek(address);
 		}
-		this.updateWeeklyRewards();
+		this.updateTotalRewards();
 		this.resetRanksWeek();
 	}
 
@@ -214,7 +213,7 @@ export class DailyOutput {
 		};
 	}
 
-	private updateWeeklyRewards(): void {
+	private updateTotalRewards(): void {
 		this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
 			const prevTotal = this.data.ranks.total.groupEffortRewards.find(({ address: addr }) => addr === address);
 			if (prevTotal) {
@@ -301,9 +300,9 @@ export class DailyOutput {
 				}
 				this.sumFile(ownerAddress);
 			}
-		} else if (isBundleTransaction && tip && fee) {
+		} else if (isBundleTransaction && isTipValid && tip) {
 			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
-			if (bundleTipType === UPLOAD_DATA_TIP_TYPE && isTipValid) {
+			if (bundleTipType === UPLOAD_DATA_TIP_TYPE) {
 				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
 				this.sumSize(ownerAddress, dataSize);
 				this.sumTip(ownerAddress, tip);
@@ -320,6 +319,7 @@ export class DailyOutput {
 			// it is file data transaction
 			if (!tip) {
 				// transactions with no tip are bundled transactions or invalid V2 transactions
+				// TODO: double chek if this case is covered by isTipValid
 				return;
 			}
 			if (!isTipValid) {

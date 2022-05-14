@@ -91,12 +91,12 @@ export const ardriveOracle = new ArDriveContractOracle([
 export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDriveContractOracle): Promise<boolean> {
 	const tags = node.tags;
 	const boostValue = +(tags.find((tag) => tag.name === BOOST_TAG)?.value || '1');
-	const appName = tags.find(tag => tag.name === APP_NAME_TAG)?.value;
-	const appVersion = tags.find(tag => tag.name === APP_VERSION_TAG)?.value;
+	const appName = tags.find((tag) => tag.name === APP_NAME_TAG)?.value;
+	const appVersion = tags.find((tag) => tag.name === APP_VERSION_TAG)?.value;
 	const bundledIn = node.bundledIn;
 	const isV2Tx = !bundledIn;
-	if (appName === WEB_APP_NAME && appVersion && isSemanticVersionGreaterThan('1.14.1', appVersion) && isV2Tx) {
-		console.log(`just found a v2 transaction of web <v1.14.1`);
+	if (appName === WEB_APP_NAME && appVersion && !isSemanticVersionGreaterThan(appVersion, '1.14.1') && isV2Tx) {
+		console.log(`just found a v2 transaction of web <= v1.14.1`);
 		// we ignore web v2 transactions' tip as it's not possible to validate
 		return true;
 	}
@@ -116,8 +116,8 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
  * @param appVersion_b a string representing a semantic version
  */
 export function isSemanticVersionGreaterThan(appVersion_a: string, appVersion_b: string): boolean {
-	const [major_a, minor_a, patch_a] = appVersion_a.split('.').map(version => +version);
-	const [major_b, minor_b, patch_b] = appVersion_b.split('.').map(version=>+version);
+	const [major_a, minor_a, patch_a] = appVersion_a.split('.').map((version) => +version);
+	const [major_b, minor_b, patch_b] = appVersion_b.split('.').map((version) => +version);
 
 	// calculate the diffs
 	const majorVersionDiff = major_a - major_b;
