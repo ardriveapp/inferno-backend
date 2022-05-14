@@ -46,6 +46,11 @@ describe('HeightRange class', () => {
 				new HeightRange(61, 64),
 				new HeightRange(71, 100)
 			]);
+			expect(myRange.findHoles([new HeightRange(55, 55), new HeightRange(65, 65)])).to.deep.equal([
+				new HeightRange(50, 54),
+				new HeightRange(56, 64),
+				new HeightRange(66, 100)
+			]);
 		});
 
 		it('returns an empty array if there are no holes', () => {
