@@ -32,14 +32,6 @@ export class GQLCache {
 	 * @param edges - an array of edges sorted by HEIGHT_DESC order
 	 */
 	public async addEdges(edges: GQLEdgeInterface[]): Promise<void> {
-		// const allEdges = await this.getAllEdgesWithinRange();
-		const newTxIDs = edges.map((edge) => edge.node.id);
-		const duplicated = this.edgesOfHeight.filter((edge) => newTxIDs.includes(edge.node.id));
-		if (duplicated.length) {
-			const height = duplicated[0].node.block.height;
-			const duplicatedTxIDs = duplicated.map((edge) => edge.node.id);
-			throw new Error(`!!!!!!! Duplicated IDs (${height}): ${duplicatedTxIDs}`);
-		}
 		edges.forEach(this.addSingleEdge);
 	}
 
@@ -62,7 +54,7 @@ export class GQLCache {
 			this.currentHeight = height;
 			this.edgesOfHeight = [];
 			// Run again with the new given height
-			this.addSingleEdge(edge);
+			this.edgesOfHeight.push(edge);
 		}
 	};
 

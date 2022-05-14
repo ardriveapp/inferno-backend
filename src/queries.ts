@@ -2,7 +2,7 @@ import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, TIMEOUT, VALID_APP_NAMES } from './constants';
-import { getBlockHeight, ardriveOracle, heightAscSortFunction } from './common';
+import { getBlockHeight, ardriveOracle } from './common';
 import { GQLCache } from './gql_cache';
 import fetch from './utils/fetch_with_timeout';
 import { HeightRange } from './height_range';
@@ -77,7 +77,7 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 			// to ensure we are querying in descendant order
 			new HeightRange(oldestTransaction.node.block.height, mostRecentTransaction.node.block.height);
 			cursor = oldestTransaction.cursor;
-			await cache.addEdges(edges.sort(heightAscSortFunction));
+			await cache.addEdges(edges);
 		}
 	}
 
