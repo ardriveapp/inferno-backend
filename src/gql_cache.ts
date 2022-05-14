@@ -9,47 +9,66 @@ const CACHE_FOLDER = './cache';
  * 1. minimum height
  * 2. maximum height
  */
-const FILENAME_REGEXP = /gql_cache_(\d+)-(\d+).json/;
+const FILENAME_REGEXP = /gql_cache_(\d+).json/;
 
-function filenameToRange(fileName: string): HeightRange {
+function filenameToHeight(fileName: string): number {
 	const nameMatch = fileName.match(FILENAME_REGEXP);
 	if (!nameMatch) {
 		throw new Error(`Wrong file name: ${fileName}`);
 	}
-	console.log('Ranges from filename: ', nameMatch[1], nameMatch[2]);
 	const min = +nameMatch[1];
-	const max = +nameMatch[2];
-	return new HeightRange(min, max);
+	return min;
 }
 
 // TODO: ensure no duplicated edges
 export class GQLCache {
+	private currentHeight = 0;
+	private edgesOfHeight: GQLEdgeInterface[] = [];
+
 	constructor(private readonly range: HeightRange) {}
 
 	/**
 	 * adds to the cache file the given edges
 	 * @param edges - an array of edges sorted by HEIGHT_DESC order
 	 */
-	public async addEdges(edges: GQLEdgeInterface[], range: HeightRange): Promise<void> {
-		const allEdges = await this.getAllEdgesWithinRange();
+	public async addEdges(edges: GQLEdgeInterface[]): Promise<void> {
+		// const allEdges = await this.getAllEdgesWithinRange();
 		const newTxIDs = edges.map((edge) => edge.node.id);
-		const duplicated = allEdges.filter((edge) => newTxIDs.includes(edge.node.id));
+		const duplicated = this.edgesOfHeight.filter((edge) => newTxIDs.includes(edge.node.id));
 		if (duplicated.length) {
+			const height = duplicated[0].node.block.height;
 			const duplicatedTxIDs = duplicated.map((edge) => edge.node.id);
-			throw new Error(`Duplicated IDs: ${duplicatedTxIDs}`);
+			throw new Error(`!!!!!!! Duplicated IDs (${height}): ${duplicatedTxIDs}`);
 		}
-		const sortedEdges = edges.reverse();
-		const filePath = this.getFilePath(range);
-		if (existsSync(filePath)) {
-			// merge the edges
-			const existingEdges = JSON.parse(readFileSync(filePath).toString());
-			sortedEdges.push(...existingEdges);
-		}
-		const stringifiedEdges = JSON.stringify(sortedEdges);
+		edges.forEach(this.addSingleEdge);
+	}
+
+	private addSingleEdge = (edge: GQLEdgeInterface): void => {
 		if (!this.cacheFolderExists) {
 			mkdirSync(CACHE_FOLDER);
 		}
-		// TODO: maybe create one file per height
+		const height = edge.node.block.height;
+		if (existsSync(joinPath(CACHE_FOLDER, this.getFilePath(height)))) {
+			throw new Error('This block was already cached');
+		}
+		if (!this.currentHeight) {
+			this.currentHeight = height;
+		}
+		if (this.currentHeight === height) {
+			this.edgesOfHeight.push(edge);
+		} else {
+			console.log(` # Finished caching block ${height}`);
+			this.persistCache();
+			this.currentHeight = height;
+			this.edgesOfHeight = [];
+			// Run again with the new given height
+			this.addSingleEdge(edge);
+		}
+	};
+
+	private persistCache(): void {
+		const filePath = this.getFilePath(this.currentHeight);
+		const stringifiedEdges = JSON.stringify(this.edgesOfHeight);
 		writeFileSync(filePath, stringifiedEdges);
 	}
 
@@ -82,25 +101,20 @@ export class GQLCache {
 		return existsSync(CACHE_FOLDER);
 	}
 
-	// private getCacheFileExists(range: HeightRange): boolean {
-	// 	const filePath = this.getFilePath(range);
-	// 	return existsSync(filePath);
-	// }
-
-	private getFilePath(range: HeightRange): string {
-		return `${CACHE_FOLDER}/gql_cache_${range.min}-${range.max}.json`;
+	private getFilePath(height: number): string {
+		return `${CACHE_FOLDER}/gql_cache_${height}.json`;
 	}
 
 	public getNonCachedRangesWithin(): HeightRange[] {
-		const cachedRanges = this.getCacheRangesWithin();
+		const cachedRanges = this.getCachedHeightsWithin().map((height) => new HeightRange(height, height));
 		const nonCachedRanges = this.range.findHoles(cachedRanges);
 		return nonCachedRanges;
 	}
 
-	private getCacheRangesWithin(): HeightRange[] {
+	private getCachedHeightsWithin(): number[] {
 		const allCacheFileNames = this.getAllCacheFileNames();
-		const allRanges = allCacheFileNames.map(filenameToRange);
-		return allRanges.filter(this.range.isIncludedFilter.bind(this));
+		const allHeights = allCacheFileNames.map(filenameToHeight);
+		return allHeights.filter(this.range.isIncludedFilter.bind(this.range)).sort();
 	}
 
 	private getAllCacheFileNames(): string[] {
@@ -108,6 +122,6 @@ export class GQLCache {
 			return [];
 		}
 		const listResult = readdirSync(CACHE_FOLDER);
-		return listResult.sort();
+		return listResult;
 	}
 }

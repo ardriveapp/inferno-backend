@@ -6,7 +6,7 @@ import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME, BOOST_TAG, APP_NAME_TAG, APP_VERSION
 import { WalletsStats } from './inferno_types';
 import Arweave from 'arweave';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
-import { GQLNodeInterface } from './gql_types';
+import { GQLNodeInterface, GQLEdgeInterface } from './gql_types';
 
 const EPSILON = 0.1;
 
@@ -205,4 +205,8 @@ export function dateToEST(d: Date): Date {
 	const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
 	date.setMinutes(date.getMinutes() + easternTimeOffset);
 	return date;
+}
+
+export function heightAscSortFunction(edge_a: GQLEdgeInterface, edge_b: GQLEdgeInterface): number {
+	return edge_a.node.block.height - edge_b.node.block.height;
 }

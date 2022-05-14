@@ -2,7 +2,7 @@ import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, TIMEOUT, VALID_APP_NAMES } from './constants';
-import { getBlockHeight, ardriveOracle } from './common';
+import { getBlockHeight, ardriveOracle, heightAscSortFunction } from './common';
 import { GQLCache } from './gql_cache';
 import fetch from './utils/fetch_with_timeout';
 import { HeightRange } from './height_range';
@@ -53,43 +53,31 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  */
 export async function getAllArDriveTransactionsWithin(range: HeightRange): Promise<GQLEdgeInterface[]> {
 	const cache = new GQLCache(range);
-	const nonCachedRanges = cache.getNonCachedRangesWithin();
+	const nonCachedRanges = cache.getNonCachedRangesWithin().reverse();
 
-	console.log(`Ranges to query:`, { nonCachedRanges });
+	console.log('Height ranges to query are', nonCachedRanges.length);
 
 	for (const nonCachedRange of nonCachedRanges) {
 		let hasNextPage = true;
 		let cursor = '';
-		let heightCursor = nonCachedRange.max;
+
+		console.log('Querying range', nonCachedRange);
 
 		while (hasNextPage) {
 			const query = createQuery(nonCachedRange, cursor);
 			const response = await sendQuery(query);
 			const edges = response.edges;
 			hasNextPage = response.pageInfo.hasNextPage;
+			console.log(` # Recieved ${edges.length} transactions.`, { hasNextPage });
 			if (!edges.length) {
-				throw new Error('GQL responded an empty result');
+				continue;
 			}
-			console.log(JSON.stringify(edges));
 			const oldestTransaction = edges[edges.length - 1];
 			const mostRecentTransaction = edges[0];
-			console.log('Responded range ', {
-				oldest: oldestTransaction.node.block.height,
-				recent: mostRecentTransaction.node.block.height
-			});
-			const fetchedRange = new HeightRange(
-				oldestTransaction.node.block.height,
-				mostRecentTransaction.node.block.height
-			);
-			console.log('Responded range ', { fetchedRange });
+			// to ensure we are querying in descendant order
+			new HeightRange(oldestTransaction.node.block.height, mostRecentTransaction.node.block.height);
 			cursor = oldestTransaction.cursor;
-			const oldestHeight = oldestTransaction.node.block.height;
-			console.log('The height cursor ', { oldestHeight, heightCursor });
-			await cache.addEdges(
-				edges,
-				new HeightRange(oldestHeight, Math.max(heightCursor - 1, mostRecentTransaction.node.block.height))
-			);
-			heightCursor = oldestHeight;
+			await cache.addEdges(edges.sort(heightAscSortFunction));
 		}
 	}
 
@@ -142,7 +130,6 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 				pendingRetries--;
 				continue;
 			}
-			console.log({ txCount: JSONBody.data.transactions.edges.length });
 			return JSONBody.data.transactions;
 		} catch (e) {
 			pendingRetries--;

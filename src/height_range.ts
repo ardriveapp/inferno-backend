@@ -32,7 +32,10 @@ export class HeightRange {
 		return holes;
 	}
 
-	public isIncludedFilter(range: HeightRange): boolean {
+	public isIncludedFilter(range: number | HeightRange): boolean {
+		if (typeof range === 'number') {
+			return range >= this.min && range <= this.max;
+		}
 		return range.min >= this.min && range.max <= this.max;
 	}
 }
