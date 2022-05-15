@@ -77,7 +77,7 @@ export class GQLCache {
 				const min = Math.min(this.currentHeight, height);
 				const max = Math.max(this.currentHeight, height);
 				const rangeDiff = new HeightRange(min + 1, max - 1);
-				const isEmptyRange = this.getNonCachedRangesWithin().map(toString).includes(rangeDiff.toString());
+				const isEmptyRange = !this.areThereCachedBlocksInRange(rangeDiff);
 				if (isEmptyRange) {
 					console.log(`hole at ${rangeDiff}`);
 					this.setEmptyRange(rangeDiff);
@@ -93,6 +93,12 @@ export class GQLCache {
 	public setEmptyRange(range: HeightRange): void {
 		const filePath = this.getFilePathOfEmptyRange(range);
 		writeFileSync(filePath, '[]');
+	}
+
+	public done(): void {
+		this.persistCache();
+		this.currentHeight = 0;
+		this.edgesOfHeight = [];
 	}
 
 	private persistCache(): void {
@@ -124,6 +130,12 @@ export class GQLCache {
 			cachedEdges.push(...JSON.parse(cacheData.toString()));
 		});
 		return cachedEdges;
+	}
+
+	private areThereCachedBlocksInRange(range: HeightRange): boolean {
+		const allCachedHeights = this.getAllFilenamesOfBlocks().map(blockFilenameToHeight);
+		const cachedBlocksInRange = allCachedHeights.filter(range.isIncludedFilter.bind(range));
+		return !!cachedBlocksInRange.length;
 	}
 
 	public get cacheFolderExists(): boolean {

@@ -84,7 +84,7 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 			await cache.addEdges(edges);
 		}
 	}
-
+	cache.done();
 	const allEdges = await cache.getAllEdgesWithinRange();
 	return allEdges;
 }
