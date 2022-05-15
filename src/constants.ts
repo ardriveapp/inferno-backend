@@ -13,7 +13,7 @@ export const ITEMS_PER_REQUEST = 100;
 export const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'] as const;
 export const BLOCKS_PER_MONTH = 21600;
 export const MAX_RETRIES = 10;
-export const TIMEOUT = 20000;
+export const TIMEOUT = 40000;
 export const initialWalletStats = (): WalletStatEntry => {
 	return {
 		fileCount: 0,

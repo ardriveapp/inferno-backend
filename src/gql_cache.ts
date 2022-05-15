@@ -69,14 +69,19 @@ export class GQLCache {
 		if (this.currentHeight === height) {
 			this.edgesOfHeight.push(edge);
 		} else {
-			console.log(` # Finished caching block ${height}`);
+			console.log(` # Finished caching block ${this.currentHeight}. Newer is ${height}`);
 			this.persistCache();
 
-			const areBlocksContiguous = Math.abs(this.currentHeight - height) >= 1;
+			const areBlocksContiguous = Math.abs(this.currentHeight - height) === 1;
 			if (!areBlocksContiguous) {
 				const min = Math.min(this.currentHeight, height);
 				const max = Math.max(this.currentHeight, height);
-				this.setEmptyRange(new HeightRange(min + 1, max - 1));
+				const rangeDiff = new HeightRange(min + 1, max - 1);
+				const isEmptyRange = this.getNonCachedRangesWithin().map(toString).includes(rangeDiff.toString());
+				if (isEmptyRange) {
+					console.log(`hole at ${rangeDiff}`);
+					this.setEmptyRange(rangeDiff);
+				}
 			}
 
 			this.currentHeight = height;

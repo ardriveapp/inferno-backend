@@ -69,14 +69,17 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 			const edges = response.edges;
 			hasNextPage = response.pageInfo.hasNextPage;
 			console.log(` # Recieved ${edges.length} transactions.`, { hasNextPage });
+
 			if (!edges.length) {
 				cache.setEmptyRange(nonCachedRange);
 				continue;
 			}
+
+			// to ensure we are querying in descendant order
 			const oldestTransaction = edges[edges.length - 1];
 			const mostRecentTransaction = edges[0];
-			// to ensure we are querying in descendant order
 			new HeightRange(oldestTransaction.node.block.height, mostRecentTransaction.node.block.height);
+
 			cursor = oldestTransaction.cursor;
 			await cache.addEdges(edges);
 		}
@@ -129,11 +132,13 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			const errors = !JSONBody.data && JSONBody.errors;
 			if (errors) {
 				pendingRetries--;
+				console.log(`GQL error (${pendingRetries}): ${JSON.stringify(errors)}`);
 				continue;
 			}
 			return JSONBody.data.transactions;
 		} catch (e) {
 			pendingRetries--;
+			console.log(`Error was thrown (${pendingRetries}): ${e}`);
 			continue;
 		}
 	}

@@ -1,13 +1,13 @@
 export class HeightRange {
 	constructor(readonly min: number, readonly max: number) {
 		if (!(Number.isInteger(min) && Number.isInteger(min))) {
-			throw new Error(`The heigth must be an integer value`);
+			throw new Error(`The heigth must be an integer value. ${min}-${max}`);
 		}
 		if (!(min >= 0 && max >= 0)) {
-			throw new Error(`The height must be a positive value`);
+			throw new Error(`The height must be a positive value. ${min}-${max}`);
 		}
 		if (min > max) {
-			throw new Error(`The min must be less or equal than the max`);
+			throw new Error(`The min must be less or equal than the max. ${min}-${max}`);
 		}
 	}
 
@@ -39,11 +39,15 @@ export class HeightRange {
 		return range.min >= this.min && range.max <= this.max;
 	}
 
-	public toArrayOfHeights(): number[] {
-		const heights: number[] = [];
-		for (let cursor = this.min; cursor <= this.max; cursor++) {
-			heights.push(cursor);
-		}
-		return heights;
+	public toString(): string {
+		return `HeightRange<${this.min}-${this.max}>`;
 	}
+
+	// public toArrayOfHeights(): number[] {
+	// 	const heights: number[] = [];
+	// 	for (let cursor = this.min; cursor <= this.max; cursor++) {
+	// 		heights.push(cursor);
+	// 	}
+	// 	return heights;
+	// }
 }
