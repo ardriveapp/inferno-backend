@@ -9,15 +9,35 @@ const CACHE_FOLDER = './cache';
  * 1. minimum height
  * 2. maximum height
  */
-const FILENAME_REGEXP = /gql_cache_(\d+).json/;
+const BLOCK_FILENAME_REGEXP = /gql_cache_block_(\d+).json/;
 
-function filenameToHeight(fileName: string): number {
-	const nameMatch = fileName.match(FILENAME_REGEXP);
+const EMPTIES_FILENAME_REGEXP = /gql_cache_empty_(\d+)-(\d+).json/;
+
+function isBlockFilename(filename: string): boolean {
+	return !!filename.match(BLOCK_FILENAME_REGEXP);
+}
+
+function isEmptiesFilename(filename: string): boolean {
+	return !!filename.match(EMPTIES_FILENAME_REGEXP);
+}
+
+function blockFilenameToHeight(fileName: string): number {
+	const nameMatch = fileName.match(BLOCK_FILENAME_REGEXP);
 	if (!nameMatch) {
 		throw new Error(`Wrong file name: ${fileName}`);
 	}
 	const min = +nameMatch[1];
 	return min;
+}
+
+function emptyFilenameToRange(fileName: string): HeightRange {
+	const nameMatch = fileName.match(EMPTIES_FILENAME_REGEXP);
+	if (!nameMatch) {
+		throw new Error(`Wrong file name: ${fileName}`);
+	}
+	const min = Math.min(+nameMatch[1], +nameMatch[2]);
+	const max = Math.max(+nameMatch[1], +nameMatch[2]);
+	return new HeightRange(min, max);
 }
 
 // TODO: ensure no duplicated edges
@@ -40,7 +60,7 @@ export class GQLCache {
 			mkdirSync(CACHE_FOLDER);
 		}
 		const height = edge.node.block.height;
-		if (existsSync(joinPath(CACHE_FOLDER, this.getFilePath(height)))) {
+		if (existsSync(joinPath(CACHE_FOLDER, this.getFilePathOfBlock(height)))) {
 			throw new Error('This block was already cached');
 		}
 		if (!this.currentHeight) {
@@ -51,15 +71,27 @@ export class GQLCache {
 		} else {
 			console.log(` # Finished caching block ${height}`);
 			this.persistCache();
+
+			const areBlocksContiguous = Math.abs(this.currentHeight - height) >= 1;
+			if (!areBlocksContiguous) {
+				const min = Math.min(this.currentHeight, height);
+				const max = Math.max(this.currentHeight, height);
+				this.setEmptyRange(new HeightRange(min + 1, max - 1));
+			}
+
 			this.currentHeight = height;
 			this.edgesOfHeight = [];
-			// Run again with the new given height
 			this.edgesOfHeight.push(edge);
 		}
 	};
 
+	public setEmptyRange(range: HeightRange): void {
+		const filePath = this.getFilePathOfEmptyRange(range);
+		writeFileSync(filePath, '[]');
+	}
+
 	private persistCache(): void {
-		const filePath = this.getFilePath(this.currentHeight);
+		const filePath = this.getFilePathOfBlock(this.currentHeight);
 		const stringifiedEdges = JSON.stringify(this.edgesOfHeight);
 		writeFileSync(filePath, stringifiedEdges);
 	}
@@ -93,20 +125,41 @@ export class GQLCache {
 		return existsSync(CACHE_FOLDER);
 	}
 
-	private getFilePath(height: number): string {
-		return `${CACHE_FOLDER}/gql_cache_${height}.json`;
+	private getFilePathOfBlock(height: number): string {
+		return `${CACHE_FOLDER}/gql_cache_block_${height}.json`;
+	}
+
+	private getFilePathOfEmptyRange(range: HeightRange): string {
+		return `${CACHE_FOLDER}/gql_cache_empty_${range.min}-${range.max}.json`;
 	}
 
 	public getNonCachedRangesWithin(): HeightRange[] {
 		const cachedRanges = this.getCachedHeightsWithin().map((height) => new HeightRange(height, height));
-		const nonCachedRanges = this.range.findHoles(cachedRanges);
+		const cachedEmptyRanges = this.getCachedEmpyRanges();
+		const nonCachedRanges = this.range.findHoles([...cachedRanges, ...cachedEmptyRanges]);
 		return nonCachedRanges;
 	}
 
 	private getCachedHeightsWithin(): number[] {
-		const allCacheFileNames = this.getAllCacheFileNames();
-		const allHeights = allCacheFileNames.map(filenameToHeight);
+		const allCacheFileNamesOfBlocks = this.getAllFilenamesOfBlocks();
+		const allHeights = allCacheFileNamesOfBlocks.map(blockFilenameToHeight);
 		return allHeights.filter(this.range.isIncludedFilter.bind(this.range)).sort();
+	}
+
+	private getAllFilenamesOfBlocks(): string[] {
+		const listResult = this.getAllCacheFileNames().filter((name) => isBlockFilename(name));
+		return listResult;
+	}
+
+	private getCachedEmpyRanges(): HeightRange[] {
+		const emptyRanges = this.getAllFilenamesOfEmptyRanges().map(emptyFilenameToRange);
+		const rangesWithinThisRange = emptyRanges.filter(this.range.isIncludedFilter.bind(this.range));
+		return rangesWithinThisRange;
+	}
+
+	private getAllFilenamesOfEmptyRanges(): string[] {
+		const listResult = this.getAllCacheFileNames().filter((name) => isEmptiesFilename(name));
+		return listResult;
 	}
 
 	private getAllCacheFileNames(): string[] {

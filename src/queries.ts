@@ -70,6 +70,7 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 			hasNextPage = response.pageInfo.hasNextPage;
 			console.log(` # Recieved ${edges.length} transactions.`, { hasNextPage });
 			if (!edges.length) {
+				cache.setEmptyRange(nonCachedRange);
 				continue;
 			}
 			const oldestTransaction = edges[edges.length - 1];

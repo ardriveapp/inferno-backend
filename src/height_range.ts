@@ -38,4 +38,12 @@ export class HeightRange {
 		}
 		return range.min >= this.min && range.max <= this.max;
 	}
+
+	public toArrayOfHeights(): number[] {
+		const heights: number[] = [];
+		for (let cursor = this.min; cursor <= this.max; cursor++) {
+			heights.push(cursor);
+		}
+		return heights;
+	}
 }
