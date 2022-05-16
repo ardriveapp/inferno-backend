@@ -3,7 +3,7 @@ import { arweave, readInitialOutputFile } from './common';
 import type { Rewards } from './inferno_types';
 import Transaction from 'arweave/node/lib/transaction';
 
-type TransactionToDistribute = {
+export type TransactionToDistribute = {
 	id: string;
 	tx: Transaction;
 	target: string;

@@ -5,6 +5,8 @@ import { arweave } from './common';
 import { stubArweaveAddress, stubTxID } from '../tests/stubs';
 import { createTransactions, sendTransaction } from './distribute';
 import type { TransactionToDistribute } from './distribute';
+import Transaction from 'arweave/node/lib/transaction';
+import { Rewards } from './inferno_types';
 
 chai.use(sinonChai);
 
@@ -15,33 +17,37 @@ function createFakeTransaction(qty: number) {
 		target: stubArweaveAddress(),
 		qty,
 		rankPosition: 100
-	} as TransactionToDistribute;
+	} as unknown as TransactionToDistribute;
 }
+
+// eslint-disable-next-line
+const dummyAddTag = () => {};
 
 describe('distribute', () => {
 	describe('createTransactions function', () => {
 		beforeEach(() => {
 			stub(arweave, 'createTransaction').callsFake(() => {
-				return Promise.resolve({ id: stubTxID, addTag: () => {} });
+				return Promise.resolve({ id: stubTxID, addTag: dummyAddTag }) as unknown as Promise<Transaction>;
 			});
 			stub(arweave, 'transactions').value({
 				sign: () => Promise.resolve(true)
 			});
 		});
+
 		it('returns a list of transactions given a rank', async () => {
-			const rank = [
+			const rank: Rewards = [
 				{
-					address: stubArweaveAddress(),
+					address: `${stubArweaveAddress()}`,
 					rewards: 10,
 					rankPosition: 1
 				},
 				{
-					address: stubArweaveAddress(),
+					address: `${stubArweaveAddress()}`,
 					rewards: 8,
 					rankPosition: 2
 				},
 				{
-					address: stubArweaveAddress(),
+					address: `${stubArweaveAddress()}`,
 					rewards: 6,
 					rankPosition: 3
 				}
