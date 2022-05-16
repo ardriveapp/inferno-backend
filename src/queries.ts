@@ -1,11 +1,11 @@
 import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
-// import Axios from 'axios';
-import fetch from 'node-fetch';
 import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
-import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
+import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, TIMEOUT, VALID_APP_NAMES } from './constants';
 import { getBlockHeight, ardriveOracle } from './common';
 import { GQLCache } from './gql_cache';
+import fetch from './utils/fetch_with_timeout';
+import { HeightRange } from './height_range';
 
 const initialErrorDelayMS = 1000;
 
@@ -51,30 +51,41 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  * @param maxBlock an integer representing the block until where to query the data
  * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
  */
-export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
-	const cache = new GQLCache(minBlock, maxBlock);
-	if (cache.exists) {
-		// early return from cache
-		// note: it will only return here if the block range is EXACTLY the same
-		return await cache.getEdges();
-	}
+export async function getAllArDriveTransactionsWithin(range: HeightRange): Promise<GQLEdgeInterface[]> {
+	const cache = new GQLCache(range);
+	const nonCachedRanges = cache.getNonCachedRangesWithin().reverse();
 
-	let hasNextPage = true;
-	let cursor = '';
+	console.log('Height ranges to query are', nonCachedRanges.length);
 
-	while (hasNextPage) {
-		const query = createQuery(minBlock, maxBlock, cursor);
-		const response = await sendQuery(query);
-		const edges = response.edges;
-		hasNextPage = response.pageInfo.hasNextPage;
-		if (edges.length) {
-			const mostRecentTransaction = response.edges[response.edges.length - 1];
-			cursor = mostRecentTransaction.cursor;
+	for (const nonCachedRange of nonCachedRanges) {
+		let hasNextPage = true;
+		let cursor = '';
+
+		console.log('Querying range', nonCachedRange);
+
+		while (hasNextPage) {
+			const query = createQuery(nonCachedRange, cursor);
+			const response = await sendQuery(query);
+			const edges = response.edges;
+			hasNextPage = response.pageInfo.hasNextPage;
+			console.log(` # Recieved ${edges.length} transactions.`, { hasNextPage });
+
+			if (!edges.length) {
+				cache.setEmptyRange(nonCachedRange);
+				continue;
+			}
+
+			// to ensure we are querying in descendant order
+			const oldestTransaction = edges[edges.length - 1];
+			const mostRecentTransaction = edges[0];
+			new HeightRange(oldestTransaction.node.block.height, mostRecentTransaction.node.block.height);
+
+			cursor = oldestTransaction.cursor;
 			await cache.addEdges(edges);
 		}
 	}
-
-	const allEdges = await cache.getEdges();
+	cache.done();
+	const allEdges = await cache.getAllEdgesWithinRange();
 	return allEdges;
 }
 
@@ -95,18 +106,22 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 		}
 
 		try {
-			const response = await fetch(GQL_URL, {
-				method: 'POST',
-				headers: {
-					'Accept-Encoding': 'gzip, deflate, br',
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					Connection: 'keep-alive',
-					DNT: '1',
-					Origin: GQL_URL
+			const response = await fetch(
+				GQL_URL,
+				{
+					method: 'POST',
+					headers: {
+						'Accept-Encoding': 'gzip, deflate, br',
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						Connection: 'keep-alive',
+						DNT: '1',
+						Origin: GQL_URL
+					},
+					body: JSON.stringify(query)
 				},
-				body: JSON.stringify(query)
-			});
+				TIMEOUT
+			);
 
 			responseOk = response.ok;
 
@@ -117,11 +132,13 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			const errors = !JSONBody.data && JSONBody.errors;
 			if (errors) {
 				pendingRetries--;
+				console.log(`GQL error (${pendingRetries}): ${JSON.stringify(errors)}`);
 				continue;
 			}
 			return JSONBody.data.transactions;
 		} catch (e) {
 			pendingRetries--;
+			console.log(`Error was thrown (${pendingRetries}): ${e}`);
 			continue;
 		}
 	}
@@ -139,12 +156,12 @@ async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promis
  * @param maxBlock an integer representing the block until where to query the data
  * @returns
  */
-function createQuery(minBlock: number, maxBlock: number, cursor = ''): Query {
+function createQuery(range: HeightRange, cursor = ''): Query {
 	return {
 		query: `
 			query {
 				transactions(
-					block: { max: ${maxBlock}, min: ${minBlock} }
+					block: { min: ${range.min}, max: ${range.max} }
 					first: ${ITEMS_PER_REQUEST}
 					tags: [
 						{

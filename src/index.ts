@@ -6,6 +6,7 @@ import { getAllArDriveTransactionsWithin, getWalletsEligibleForStreak } from './
 import { getBlockHeight, getMinBlockHeight } from './common';
 import { distributeTokens } from './distribute';
 import { LoggerFactory } from 'redstone-smartweave';
+import { HeightRange } from './height_range';
 
 /**
  * A Python-like approach to determine if the JS code is running this exact module, and not being imported
@@ -80,7 +81,7 @@ async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promis
 	const output = new DailyOutput([minimumBlock, maximumBlock]);
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
-	const edges = await getAllArDriveTransactionsWithin(minimumBlock, maximumBlock);
+	const edges = await getAllArDriveTransactionsWithin(new HeightRange(minimumBlock, maximumBlock));
 	await output.feedGQLData(edges);
 	output.write();
 }
