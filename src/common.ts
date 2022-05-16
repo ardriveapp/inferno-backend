@@ -96,7 +96,6 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const bundledIn = node.bundledIn;
 	const isV2Tx = !bundledIn;
 	if (appName === WEB_APP_NAME && appVersion && !isSemanticVersionGreaterThan(appVersion, '1.14.1') && isV2Tx) {
-		console.log(`just found a v2 transaction of web <= v1.14.1`);
 		// we ignore web v2 transactions' tip as it's not possible to validate
 		return true;
 	}
@@ -107,6 +106,7 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const tipRecipientAddress = node.recipient;
 	const wasValidTipRecipient = await ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
 
+	// we are using EPSILON here to have a minimum range of error acceptance
 	return tipPercentage + EPSILON >= 15 && wasValidTipRecipient;
 }
 
