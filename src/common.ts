@@ -2,7 +2,7 @@ import fs from 'fs';
 import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
 import { RedstoneContractReader } from './community/redstone_contract_reader';
 import { SmartweaveContractReader } from './community/smartweave_contract_oracle';
-import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME } from './constants';
+import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME, BOOST_TAG, APP_NAME_TAG, APP_VERSION_TAG, WEB_APP_NAME } from './constants';
 import { WalletsStats } from './inferno_types';
 import Arweave from 'arweave';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
@@ -90,7 +90,16 @@ export const ardriveOracle = new ArDriveContractOracle([
 
 export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDriveContractOracle): Promise<boolean> {
 	const tags = node.tags;
-	const boostValue = +(tags.find((tag) => tag.name === 'Boost')?.value || '1');
+	const boostValue = +(tags.find((tag) => tag.name === BOOST_TAG)?.value || '1');
+	const appName = tags.find(tag => tag.name === APP_NAME_TAG)?.value;
+	const appVersion = tags.find(tag => tag.name === APP_VERSION_TAG)?.value;
+	const bundledIn = node.bundledIn;
+	const isV2Tx = !bundledIn;
+	if (appName === WEB_APP_NAME && appVersion && isSemanticVersionGreaterThan('1.14.1', appVersion) && isV2Tx) {
+		console.log(`just found a v2 transaction of web <v1.14.1`);
+		// we ignore web v2 transactions' tip as it's not possible to validate
+		return true;
+	}
 	const fee = +node.fee.winston;
 	const tip = +node.quantity.winston;
 	const tipPercentage = calculateTipPercentage(fee, boostValue, tip);
@@ -99,6 +108,33 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const wasValidTipRecipient = await ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
 
 	return tipPercentage + EPSILON >= 15 && wasValidTipRecipient;
+}
+
+/**
+ * returns true if the first version string is greater than the latter
+ * @param appVersion_a a string representing a semantic version
+ * @param appVersion_b a string representing a semantic version
+ */
+export function isSemanticVersionGreaterThan(appVersion_a: string, appVersion_b: string): boolean {
+	const [major_a, minor_a, patch_a] = appVersion_a.split('.').map(version => +version);
+	const [major_b, minor_b, patch_b] = appVersion_b.split('.').map(version=>+version);
+
+	// calculate the diffs
+	const majorVersionDiff = major_a - major_b;
+	const minorVersionDiff = minor_a - minor_b;
+	const patchVersionDiff = patch_a - patch_b;
+
+	// iterate from major, to minor and then patch
+	for (const versionDiff of [majorVersionDiff, minorVersionDiff, patchVersionDiff]) {
+		if (versionDiff !== 0) {
+			// the currently iterated version number is different between the inputs
+			// if the diff is greater, then the version is greater; smaller otherwise
+			return versionDiff > 0;
+		}
+	}
+
+	// the two versions are the same
+	return false;
 }
 
 export function daysDiffInEST(prev: Date, curr: Date): number {
@@ -110,6 +146,7 @@ export function daysDiffInEST(prev: Date, curr: Date): number {
 	cursorDate.setHours(0);
 	cursorDate.setMinutes(0);
 	cursorDate.setSeconds(0);
+	cursorDate.setMilliseconds(0);
 
 	while (currEstDate.getTime() > cursorDate.getTime()) {
 		const cursorDay = cursorDate.getDate();
@@ -118,6 +155,11 @@ export function daysDiffInEST(prev: Date, curr: Date): number {
 			daysCount++;
 		}
 	}
+
+	if (daysCount) {
+		console.log(`Difference in days between ${prevEstDate} and ${currEstDate}: ${daysCount}`);
+	}
+
 	return daysCount;
 }
 
@@ -136,6 +178,11 @@ export function weeksDiffInEST(prev: Date, curr: Date): number {
 			weeksCount++;
 		}
 	}
+
+	if (weeksCount) {
+		console.log(`Difference in weeks between ${prevEstDate} and ${currEstDate}: ${weeksCount}`);
+	}
+
 	return weeksCount;
 }
 

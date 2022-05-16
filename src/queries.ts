@@ -5,6 +5,7 @@ import { Query, StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
 import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, VALID_APP_NAMES } from './constants';
 import { getBlockHeight, ardriveOracle } from './common';
+import { GQLCache } from './gql_cache';
 
 const initialErrorDelayMS = 1000;
 
@@ -51,7 +52,12 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  * @returns {Promise<GQLEdgeInterface[]>} the edges of the GQL result
  */
 export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock: number): Promise<GQLEdgeInterface[]> {
-	const allEdges: GQLEdgeInterface[] = [];
+	const cache = new GQLCache(minBlock, maxBlock);
+	if (cache.exists) {
+		// early return from cache
+		// note: it will only return here if the block range is EXACTLY the same
+		return await cache.getEdges();
+	}
 
 	let hasNextPage = true;
 	let cursor = '';
@@ -59,17 +65,17 @@ export async function getAllArDriveTransactionsWithin(minBlock: number, maxBlock
 	while (hasNextPage) {
 		const query = createQuery(minBlock, maxBlock, cursor);
 		const response = await sendQuery(query);
-		if (response.edges.length) {
+		const edges = response.edges;
+		hasNextPage = response.pageInfo.hasNextPage;
+		if (edges.length) {
 			const mostRecentTransaction = response.edges[response.edges.length - 1];
 			cursor = mostRecentTransaction.cursor;
-			allEdges.push(...response.edges);
-			hasNextPage = response.pageInfo.hasNextPage;
-		} else {
-			hasNextPage = false;
+			await cache.addEdges(edges);
 		}
 	}
 
-	return allEdges.sort((edge_a, edge_b) => edge_a.node.block.height - edge_b.node.block.height);
+	const allEdges = await cache.getEdges();
+	return allEdges;
 }
 
 /**

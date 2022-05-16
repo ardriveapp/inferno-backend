@@ -164,21 +164,29 @@ export class DailyOutput {
 	 */
 	private resetDay(): void {
 		for (const address in this.data.wallets) {
-			this.data.wallets[address].yesterday = this.data.wallets[address].daily;
-			this.data.wallets[address].daily = {
-				byteCount: 0,
-				changeInPercentage: 0,
-				fileCount: 0,
-				rankPosition: 0,
-				tokensEarned: 0,
-				tips: 0
-			};
-			this.data.ranks.daily = {
-				hasReachedMinimumGroupEffort: false,
-				groupEffortRewards: [],
-				streakRewards: []
-			};
+			this.resetWalletDay(address);
 		}
+		this.resetRanksDay();
+	}
+
+	private resetWalletDay(address: string): void {
+		this.data.wallets[address].yesterday = this.data.wallets[address].daily;
+		this.data.wallets[address].daily = {
+			byteCount: 0,
+			changeInPercentage: 0,
+			fileCount: 0,
+			rankPosition: 0,
+			tokensEarned: 0,
+			tips: 0
+		};
+	}
+
+	private resetRanksDay(): void {
+		this.data.ranks.daily = {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		};
 	}
 
 	/**
@@ -186,34 +194,43 @@ export class DailyOutput {
 	 */
 	private resetWeek(): void {
 		for (const address in this.data.wallets) {
-			this.data.wallets[address].lastWeek = this.data.wallets[address].weekly;
-			this.data.wallets[address].weekly = {
-				byteCount: 0,
-				changeInPercentage: 0,
-				fileCount: 0,
-				rankPosition: 0,
-				tokensEarned: 0,
-				tips: 0
-			};
-			// updates the total rewards
-			this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
-				const prevTotal = this.data.ranks.total.groupEffortRewards.find(
-					({ address: addr }) => addr === address
-				);
-				if (prevTotal) {
-					const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
-					this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
-				} else {
-					this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
-				}
-			});
-			this.data.ranks.lastWeek = this.data.ranks.weekly;
-			this.data.ranks.weekly = {
-				hasReachedMinimumGroupEffort: false,
-				groupEffortRewards: [],
-				streakRewards: []
-			};
+			this.resetWalletWeek(address);
 		}
+		this.updateWeeklyRewards();
+		this.resetRanksWeek();
+	}
+
+	private resetWalletWeek(address: string): void {
+		this.data.wallets[address].lastWeek = this.data.wallets[address].weekly;
+		this.data.wallets[address].weekly = {
+			byteCount: 0,
+			changeInPercentage: 0,
+			fileCount: 0,
+			rankPosition: 0,
+			tokensEarned: 0,
+			tips: 0
+		};
+	}
+
+	private updateWeeklyRewards(): void {
+		this.data.ranks.weekly.groupEffortRewards.forEach(({ address, rewards }) => {
+			const prevTotal = this.data.ranks.total.groupEffortRewards.find(({ address: addr }) => addr === address);
+			if (prevTotal) {
+				const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+				this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards += rewards;
+			} else {
+				this.data.ranks.total.groupEffortRewards.push({ address, rewards, rankPosition: 0 });
+			}
+		});
+	}
+
+	private resetRanksWeek(): void {
+		this.data.ranks.lastWeek = this.data.ranks.weekly;
+		this.data.ranks.weekly = {
+			hasReachedMinimumGroupEffort: false,
+			groupEffortRewards: [],
+			streakRewards: []
+		};
 	}
 
 	/**
@@ -246,7 +263,7 @@ export class DailyOutput {
 		const bundledIn = node.bundledIn?.id;
 		const isV2DataTx = !isMetadataTransaction && !isBundleTransaction && !bundledIn;
 
-		if (fee && tip && isTipValid && (isV2DataTx || isBundleTransaction)) {
+		if (fee && isTipValid && (isV2DataTx || isBundleTransaction)) {
 			const queryTimestamp = edge.node.block.timestamp * 1000;
 			const queryDate = new Date(queryTimestamp);
 			const previousTimestamp = this.latestTimestamp * 1000;
@@ -254,11 +271,13 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
+				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
+				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
 				this.resetWeek();
 			}
 
