@@ -22,8 +22,5 @@ node_modules
 # Output of nyc
 /.nyc_output
 
-# GQL cache
-/cache
-
 # Daily output
 /daily_output.json
