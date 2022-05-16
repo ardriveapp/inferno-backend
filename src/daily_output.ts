@@ -135,7 +135,16 @@ export class DailyOutput {
 		this.data.ranks.total.groupEffortRewards = addresses
 			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
 			.map((address, index) => {
-				const rewards = this.data.ranks.total.groupEffortRewards[index].rewards;
+				const rewards = (() => {
+					const prevTotal = this.data.ranks.total.groupEffortRewards.find(
+						({ address: addr }) => addr === address
+					);
+					if (prevTotal) {
+						const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+						return this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards;
+					}
+					return 0;
+				})();
 				return { address, rewards, rankPosition: index + 1 };
 			});
 
