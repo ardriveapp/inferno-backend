@@ -106,47 +106,7 @@ export class DailyOutput {
 			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
 		});
 
-		// check if the minimum group effort was reached
-		const groupEffortParticipants: string[] = [];
-		const otherParticipants: string[] = [];
-		addresses.forEach((address) => {
-			if (this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB) {
-				groupEffortParticipants.push(address);
-			} else {
-				otherParticipants.push(address);
-			}
-		});
-
-		const hasReachedMinimumGroupEffort = groupEffortParticipants.length >= 50;
-		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
-		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
-
-		// updates the weekly/daily ranks and rewards
-		this.data.ranks.daily.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards = addresses
-			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
-			.map((address, index) => {
-				const rankPosition = index + 1;
-				const isInTop50 = rankPosition <= 50;
-				const rewards = hasReachedMinimumGroupEffort && isInTop50 ? GROUP_EFFORT_REWARDS[index] : 0;
-				return { address, rewards, rankPosition };
-			});
-
-		// updates the total ranks
-		this.data.ranks.total.groupEffortRewards = addresses
-			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
-			.map((address, index) => {
-				const rewards = (() => {
-					const prevTotal = this.data.ranks.total.groupEffortRewards.find(
-						({ address: addr }) => addr === address
-					);
-					if (prevTotal) {
-						const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
-						return this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards;
-					}
-					return 0;
-				})();
-				return { address, rewards, rankPosition: index + 1 };
-			});
+		this.caclulateWeeklyRewards();
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -173,10 +133,39 @@ export class DailyOutput {
 	 * Will copy the data of today into yesterday's and clear the today's data
 	 */
 	private resetDay(): void {
+		this.caclulateWeeklyRewards();
 		for (const address in this.data.wallets) {
 			this.resetWalletDay(address);
 		}
 		this.resetRanksDay();
+	}
+
+	private caclulateWeeklyRewards(): void {
+		const addresses = Object.keys(this.data.wallets);
+		// check if the minimum group effort was reached
+		const groupEffortParticipants: string[] = [];
+		const otherParticipants: string[] = [];
+		addresses.forEach((address) => {
+			if (this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB) {
+				groupEffortParticipants.push(address);
+			} else {
+				otherParticipants.push(address);
+			}
+		});
+
+		const hasReachedMinimumGroupEffort = groupEffortParticipants.length >= 50;
+		this.data.ranks.daily.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
+		this.data.ranks.weekly.hasReachedMinimumGroupEffort = hasReachedMinimumGroupEffort;
+
+		// updates the weekly/daily ranks and rewards
+		this.data.ranks.daily.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards = addresses
+			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
+			.map((address, index) => {
+				const rankPosition = index + 1;
+				const isInTop50 = rankPosition <= 50;
+				const rewards = hasReachedMinimumGroupEffort && isInTop50 ? GROUP_EFFORT_REWARDS[index] : 0;
+				return { address, rewards, rankPosition };
+			});
 	}
 
 	private resetWalletDay(address: string): void {
@@ -206,8 +195,29 @@ export class DailyOutput {
 		for (const address in this.data.wallets) {
 			this.resetWalletWeek(address);
 		}
+		this.caclulateTotalRanks();
 		this.updateTotalRewards();
 		this.resetRanksWeek();
+	}
+
+	private caclulateTotalRanks(): void {
+		const addresses = Object.keys(this.data.wallets);
+		// updates the total ranks
+		this.data.ranks.total.groupEffortRewards = addresses
+			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
+			.map((address, index) => {
+				const rewards = (() => {
+					const prevTotal = this.data.ranks.total.groupEffortRewards.find(
+						({ address: addr }) => addr === address
+					);
+					if (prevTotal) {
+						const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+						return this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards;
+					}
+					return 0;
+				})();
+				return { address, rewards, rankPosition: index + 1 };
+			});
 	}
 
 	private resetWalletWeek(address: string): void {
@@ -263,7 +273,6 @@ export class DailyOutput {
 
 		const fee = node.fee.winston ? +node.fee.winston : undefined;
 		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
-		// we are using EPSILON here to have a minimum range of error acceptance
 		const isTipValid = await validateTxTip(node, this.ardriveOracle);
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
@@ -289,10 +298,6 @@ export class DailyOutput {
 			for (let index = 0; index < weeksDiff; index++) {
 				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
 				this.resetWeek();
-			}
-
-			if (this.latestTimestamp !== node.block.timestamp) {
-				console.log(`Timestamp: ${node.block.timestamp}, block: ${node.block.height}`);
 			}
 
 			this.latestTimestamp = node.block.timestamp;
