@@ -159,6 +159,7 @@ export class DailyOutput {
 
 		// updates the weekly/daily ranks and rewards
 		this.data.ranks.daily.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards = addresses
+			.filter((addr) => this.data.wallets[addr].weekly.byteCount)
 			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
 			.map((address, index) => {
 				const rankPosition = index + 1;
@@ -204,6 +205,7 @@ export class DailyOutput {
 		const addresses = Object.keys(this.data.wallets);
 		// updates the total ranks
 		this.data.ranks.total.groupEffortRewards = addresses
+			.filter((addr) => this.data.wallets[addr].total.byteCount)
 			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
 			.map((address, index) => {
 				const rewards = (() => {
@@ -419,7 +421,7 @@ export class DailyOutput {
 		if (!this.validateDataStructure(this.data)) {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
-		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
+		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data));
 	}
 
 	/**
