@@ -1,5 +1,14 @@
 import { expect } from 'chai';
-import { calculateTipPercentage, dateToSunday, daysDiffInEST, isSemanticVersionGreaterThan, validateTxTip, weeksDiffInEST } from './common';
+import {
+	calculateTipPercentage,
+	dateToEST,
+	dateToSunday,
+	dateToUTC,
+	daysDiffInEST,
+	isSemanticVersionGreaterThan,
+	validateTxTip,
+	weeksDiffInEST
+} from './common';
 import { stub } from 'sinon';
 import { mockAddressRecipient, mockHeight, stubArdriveOracle, stubTxNode } from '../tests/stubs';
 
@@ -57,7 +66,8 @@ describe('common methods', () => {
 	});
 
 	const mockDateTimestamp = 1651785959180;
-	const aDayInMilliseconds = 1000 * 60 * 60 * 24;
+	const anHourInMilliseconds = 1000 * 60 * 60;
+	const aDayInMilliseconds = anHourInMilliseconds * 24;
 	const aWeekInMilliseconds = aDayInMilliseconds * 7;
 	const sameDay = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 1000)];
 	const differentDay = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 2 * aDayInMilliseconds)];
@@ -87,11 +97,18 @@ describe('common methods', () => {
 	});
 
 	describe('dateToEST function', () => {
-		before(() => {
-			// TODO: set a custom timezone (e.g. UTC) in this environment
-		});
+		it('returns a date with 4hs behind UTC', () => {
+			const dateInLocalTime = new Date(mockDateTimestamp);
+			const dateInUTC = dateToUTC(dateInLocalTime);
+			const dateInEST = dateToEST(dateInLocalTime);
 
-		it('returns a date with 4hs behind UTC');
+			const utcDiff = dateInLocalTime.getTime() - dateInUTC.getTime();
+			const estUtcDiff = dateInUTC.getTime() - dateInEST.getTime();
+
+			expect(estUtcDiff).to.equal(anHourInMilliseconds * 4);
+			// we've set the timezone (TZ env var) to be 5h ahead of GMT
+			expect(utcDiff).to.be.equal(anHourInMilliseconds * -5);
+		});
 	});
 
 	describe('dateToSunday method', () => {
@@ -145,6 +162,6 @@ describe('common methods', () => {
 			expect(isSemanticVersionGreaterThan(v1_14_0, v1_14_0)).to.be.false;
 			expect(isSemanticVersionGreaterThan(v1_14_1, v1_14_1)).to.be.false;
 			expect(isSemanticVersionGreaterThan(v1_15_0, v1_15_0)).to.be.false;
-		})
+		});
 	});
 });
