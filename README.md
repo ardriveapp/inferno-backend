@@ -24,7 +24,8 @@ The folder `./cache` contains the immutable cached blocks. Every time you run th
 
 ## Run the aggregation proccess
 
-You can call the built script by running:
+You can call the built in script by running:
+
 ```sh
 $ yarn node ./lib/index.js aggregate
 ```
