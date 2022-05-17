@@ -20,7 +20,7 @@ At this point you will have a directory at `./lib`, there will be the compiled J
 
 ## Cache
 
-The folder `./cache` contains the immutable cached blocks. Every time you run the `aggregate` command, the non-cached blocks will be added there.
+The folder `./cache` contains the immutable cached blocks returned from the GQL query. Every time you run the `aggregate` command, the non-cached blocks will be added there.
 
 ## Run the aggregation proccess
 
@@ -29,7 +29,7 @@ You can call the built in script by running:
 ```sh
 $ yarn node ./lib/index.js aggregate
 ```
-to aggregate data since the previously aggregated block (defaults to the height specified at `./daily_output.base.json`) until the current height.
+to aggregate data since the previously aggregated block (specified at `./daily_output.json`, defaults to the height specified at `./daily_output.base.json` if not present) until the current height.
 
 Or you can specify a custom height range by passing them as positional arguments:
 ```sh
