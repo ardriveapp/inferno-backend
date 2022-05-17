@@ -292,13 +292,13 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
-				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${this.data.blockHeight}, current block: ${height}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
-				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${this.data.blockHeight}, current block: ${height}`);
 				this.resetWeek();
 			}
 
@@ -355,6 +355,7 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
+		this.data.blockHeight = height;
 	};
 
 	private isParticipatingInGroupEffort(address: string): boolean {

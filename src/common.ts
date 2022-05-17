@@ -198,12 +198,16 @@ export function dateToSunday(date: Date) {
 }
 
 export function dateToEST(d: Date): Date {
+	const date = dateToUTC(d);
+	const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
+	date.setMinutes(date.getMinutes() + easternTimeOffset);
+	return date;
+}
+
+export function dateToUTC(d: Date): Date {
 	const date = new Date(d.getTime());
 	const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
 	date.setMinutes(date.getMinutes() + offset); // date now in UTC time
-
-	const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
-	date.setMinutes(date.getMinutes() + easternTimeOffset);
 	return date;
 }
 
