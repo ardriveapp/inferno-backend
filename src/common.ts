@@ -6,7 +6,7 @@ import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME, BOOST_TAG, APP_NAME_TAG, APP_VERSION
 import { WalletsStats } from './inferno_types';
 import Arweave from 'arweave';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
-import { GQLNodeInterface } from './gql_types';
+import { GQLNodeInterface, GQLEdgeInterface } from './gql_types';
 
 const EPSILON = 0.1;
 
@@ -91,12 +91,11 @@ export const ardriveOracle = new ArDriveContractOracle([
 export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDriveContractOracle): Promise<boolean> {
 	const tags = node.tags;
 	const boostValue = +(tags.find((tag) => tag.name === BOOST_TAG)?.value || '1');
-	const appName = tags.find(tag => tag.name === APP_NAME_TAG)?.value;
-	const appVersion = tags.find(tag => tag.name === APP_VERSION_TAG)?.value;
+	const appName = tags.find((tag) => tag.name === APP_NAME_TAG)?.value;
+	const appVersion = tags.find((tag) => tag.name === APP_VERSION_TAG)?.value;
 	const bundledIn = node.bundledIn;
 	const isV2Tx = !bundledIn;
-	if (appName === WEB_APP_NAME && appVersion && isSemanticVersionGreaterThan('1.14.1', appVersion) && isV2Tx) {
-		console.log(`just found a v2 transaction of web <v1.14.1`);
+	if (appName === WEB_APP_NAME && appVersion && !isSemanticVersionGreaterThan(appVersion, '1.14.1') && isV2Tx) {
 		// we ignore web v2 transactions' tip as it's not possible to validate
 		return true;
 	}
@@ -107,6 +106,7 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const tipRecipientAddress = node.recipient;
 	const wasValidTipRecipient = await ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
 
+	// we are using EPSILON here to have a minimum range of error acceptance
 	return tipPercentage + EPSILON >= 15 && wasValidTipRecipient;
 }
 
@@ -116,8 +116,8 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
  * @param appVersion_b a string representing a semantic version
  */
 export function isSemanticVersionGreaterThan(appVersion_a: string, appVersion_b: string): boolean {
-	const [major_a, minor_a, patch_a] = appVersion_a.split('.').map(version => +version);
-	const [major_b, minor_b, patch_b] = appVersion_b.split('.').map(version=>+version);
+	const [major_a, minor_a, patch_a] = appVersion_a.split('.').map((version) => +version);
+	const [major_b, minor_b, patch_b] = appVersion_b.split('.').map((version) => +version);
 
 	// calculate the diffs
 	const majorVersionDiff = major_a - major_b;
@@ -205,4 +205,8 @@ export function dateToEST(d: Date): Date {
 	const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
 	date.setMinutes(date.getMinutes() + easternTimeOffset);
 	return date;
+}
+
+export function heightAscSortFunction(edge_a: GQLEdgeInterface, edge_b: GQLEdgeInterface): number {
+	return edge_a.node.block.height - edge_b.node.block.height;
 }
