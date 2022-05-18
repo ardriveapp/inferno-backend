@@ -90,6 +90,17 @@ export class DailyOutput {
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
+		this.caclulateChangeOfUploadVolume();
+		this.caclulateWeeklyRewards();
+
+		// compute streak rewards
+		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
+		// TODO: determine if the wallets has uploaded data for 7 days in a row
+
+		this.data.lastUpdated = Date.now();
+	}
+
+	private caclulateChangeOfUploadVolume(): void {
 		const addresses = Object.keys(this.data.wallets);
 		addresses.forEach((address) => {
 			// daily change
@@ -105,14 +116,6 @@ export class DailyOutput {
 				this.changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
 			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
 		});
-
-		this.caclulateWeeklyRewards();
-
-		// compute streak rewards
-		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
-		// TODO: determine if the wallets has uploaded data for 7 days in a row
-
-		this.data.lastUpdated = Date.now();
 	}
 
 	private changeInPercentage(prev: number, curr: number): number {
@@ -134,6 +137,7 @@ export class DailyOutput {
 	 */
 	private resetDay(): void {
 		this.caclulateWeeklyRewards();
+		this.caclulateChangeOfUploadVolume();
 		for (const address in this.data.wallets) {
 			this.resetWalletDay(address);
 		}
