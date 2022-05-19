@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
 	calculateTipPercentage,
+	changeInPercentage,
 	dateToEST,
 	dateToSunday,
 	dateToUTC,
@@ -162,6 +163,40 @@ describe('common methods', () => {
 			expect(isSemanticVersionGreaterThan(v1_14_0, v1_14_0)).to.be.false;
 			expect(isSemanticVersionGreaterThan(v1_14_1, v1_14_1)).to.be.false;
 			expect(isSemanticVersionGreaterThan(v1_15_0, v1_15_0)).to.be.false;
+		});
+	});
+
+	describe('changeInPercentage function', () => {
+		it('returns zero if both values are zero', () => {
+			expect(changeInPercentage(0, 0)).to.equal(0);
+		});
+
+		it('returns 1 if the previous value is zero and the current is greater', () => {
+			expect(changeInPercentage(0, 1)).to.equal(1);
+		});
+
+		it('returns -1 if the previous is positive and the current is zero', () => {
+			expect(changeInPercentage(10, 0)).to.equal(-1);
+		});
+
+		it('returns 0.5 if the previous is 100 and the current is 150', () => {
+			expect(changeInPercentage(100, 150)).to.equal(0.5);
+		});
+
+		it('returns -0.5 if the previous is 100 and the current is 50', () => {
+			expect(changeInPercentage(100, 50)).to.equal(-0.5);
+		});
+
+		it('returns -0.99 if the previous is 300 and the current is 1', () => {
+			expect(changeInPercentage(300, 1)).to.equal(-0.9966666666666667);
+		});
+
+		it('returns -0.66 if the previous is 300 and the current is 100', () => {
+			expect(changeInPercentage(300, 100)).to.equal(-0.6666666666666666);
+		});
+
+		it('returns 2 if the previous is 50 and the current is 150', () => {
+			expect(changeInPercentage(50, 150)).to.equal(2);
 		});
 	});
 });
