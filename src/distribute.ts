@@ -1,8 +1,9 @@
 import { writeFileSync } from 'fs';
 import { normalize as normalizePath } from 'path';
-import { arweave, readInitialOutputFile } from './common';
-import type { Rewards } from './inferno_types';
 import Transaction from 'arweave/node/lib/transaction';
+import { arweave, readInitialOutputFile } from './common';
+import { communityTxId } from './community/ardrive_contract_oracle';
+import type { Rewards } from './inferno_types';
 
 export type TransactionToDistribute = {
 	id: string;
@@ -76,7 +77,7 @@ export async function createTransactions(wallets: Rewards): Promise<TransactionT
 			'App-Name': 'SmartWeaveAction',
 			'App-Version': '0.3.0',
 			Cannon: 'ArDrive Usage Rewards: Inferno',
-			Contract: '-8A6RexFkpfWwuyVO98wzSFZh0d6VJuI-buTJvlwOJQ', // The ArDrive Profit Sharing Community Contract
+			Contract: communityTxId, // The ArDrive Profit Sharing Community Contract
 			Input: JSON.stringify({
 				function: 'transfer',
 				target: address,
