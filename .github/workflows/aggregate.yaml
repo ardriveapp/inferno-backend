@@ -1,10 +1,10 @@
-
 name: Aggregate daily data
-on: 
+on:
   schedule:
     # at 6AM, 12AM, 6PM, and  12PM UTC
     # at 2AM, 8AM, 2PM, and  8PM EST
-    - cron: '0 6/6 * * *'
+    - cron: "0 6/6 * * *"
+  workflow_dispatch:
 
 jobs:
   test-and-build:
@@ -40,4 +40,3 @@ jobs:
 
       - name: Publish output
         run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
-
