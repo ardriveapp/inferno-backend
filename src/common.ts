@@ -214,3 +214,17 @@ export function dateToUTC(d: Date): Date {
 export function heightAscSortFunction(edge_a: GQLEdgeInterface, edge_b: GQLEdgeInterface): number {
 	return edge_a.node.block.height - edge_b.node.block.height;
 }
+
+export function changeInPercentage(prev: number, curr: number): number {
+	if (prev === 0) {
+		if (curr === 0) {
+			// Both zero, there's no change
+			return 0;
+		} else {
+			// Previous is zero, current is greater: 100% change
+			return 1;
+		}
+	} else {
+		return (curr - prev) / prev;
+	}
+}
