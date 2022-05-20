@@ -24,7 +24,7 @@ jobs:
       - name: Setup dependencies
         run: |
           yarn install --immutable --check-cache
-          yarn add ardrive-cli
+          yarn add -g ardrive-cli
 
       - name: Write wallet
         run: echo -n '${{ secrets.WALLET_FILE }}' | base64 --decode > /tmp/wallet
@@ -36,8 +36,8 @@ jobs:
         run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 
       - name: Run
-        run: yarn node aggregate
+        run: yarn node ./lib/index.js aggregate
 
       - name: Publish output
-        run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert --dry-run
+        run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
 
