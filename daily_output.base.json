@@ -1,0 +1,28 @@
+{
+	"lastUpdated": 1651377645000,
+	"blockHeight": 924391,
+	"timestamp": 1651377645,
+	"PSTHolders": {},
+	"wallets": {},
+	"ranks": {
+		"daily": {
+			"hasReachedMinimumGroupEffort": false,
+			"groupEffortRewards": [],
+			"streakRewards": []
+		},
+		"weekly": {
+			"hasReachedMinimumGroupEffort": false,
+			"groupEffortRewards": [],
+			"streakRewards": []
+		},
+		"lastWeek": {
+			"hasReachedMinimumGroupEffort": false,
+			"groupEffortRewards": [],
+			"streakRewards": []
+		},
+		"total": {
+			"groupEffortRewards": [],
+			"streakRewards": []
+		}
+	}
+}

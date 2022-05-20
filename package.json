@@ -1,0 +1,64 @@
+{
+	"name": "inferno-backend",
+	"version": "1.0.0",
+	"description": "A token distributor for the Inferno Rewards program",
+	"main": "src/index.ts",
+	"repository": "git@github.com:ardriveapp/inferno-backend.git",
+	"author": {
+		"name": "Permanent Data Solutions Inc",
+		"email": "info@ardrive.io",
+		"website": "https://ardrive.io"
+	},
+	"license": "AGPL-3.0-or-later",
+	"scripts": {
+		"clean": "rimraf [ lib .nyc_output node_modules coverage ]",
+		"format": "prettier --write \"src/**/*.ts\"",
+		"lint": "eslint . --ext .ts",
+		"lintfix": "eslint . --ext .ts --fix",
+		"typecheck": "tsc --noemit",
+		"test": "TZ=GMT+5 nyc mocha",
+		"build": "yarn clean && tsc --project ./tsconfig.prod.json",
+		"dev": "yarn clean && tsc --project ./tsconfig.prod.json -w",
+		"prepare": "husky install"
+	},
+	"devDependencies": {
+		"@types/chai": "^4",
+		"@types/jwk-to-pem": "^2.0.1",
+		"@types/mocha": "^9.1.1",
+		"@types/node": "^17.0.25",
+		"@types/sinon": "^10.0.11",
+		"@types/yargs": "^17",
+		"@typescript-eslint/eslint-plugin": "^5.20.0",
+		"@typescript-eslint/parser": "^5.20.0",
+		"@yarnpkg/sdks": "^3.0.0-rc.2",
+		"chai": "^4.3.6",
+		"eslint": "^8.13.0",
+		"eslint-config-prettier": "^8.1.0",
+		"eslint-plugin-prettier": "latest",
+		"husky": "^7.0.4",
+		"lint-staged": "^11.0.0",
+		"mocha": "^9.2.2",
+		"nyc": "^15.1.0",
+		"prettier": "^2.2.1",
+		"redstone-isomorphic": "^1.1.6",
+		"rimraf": "^3.0.2",
+		"sinon": "^13.0.2",
+		"ts-node": "^10.7.0",
+		"typescript": "^4.6.3"
+	},
+	"dependencies": {
+		"@types/node-fetch": "^2.6.1",
+		"arweave": "1.10.23",
+		"axios": "^0.27.2",
+		"node-fetch": "2.6.1",
+		"redstone-smartweave": "0.4.78",
+		"smartweave": "^0.4.48",
+		"yargs": "^17.4.1"
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"packageManager": "yarn@3.2.0"
+}
