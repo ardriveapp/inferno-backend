@@ -259,7 +259,7 @@ export class DailyOutput {
 
 		const heightOfPreviousRun = this.previousData.blockHeight;
 		const currentHeight = edge.node.block.height;
-		const previousHeigt = this.data.blockHeight;
+		const previousHeight = this.data.blockHeight;
 		if (heightOfPreviousRun >= currentHeight) {
 			throw new Error('That block was already processed!');
 		}
@@ -283,13 +283,13 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
-				console.log(`Prev block: ${previousHeigt}, current block: ${currentHeight}`);
+				console.log(`Prev block: ${previousHeight}, current block: ${currentHeight}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
-				console.log(`Prev block: ${previousHeigt}, current block: ${currentHeight}`);
+				console.log(`Prev block: ${previousHeight}, current block: ${currentHeight}`);
 				this.resetWeek();
 			}
 
