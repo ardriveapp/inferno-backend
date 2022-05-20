@@ -39,5 +39,5 @@ jobs:
         run: yarn node ./lib/index.js aggregate
 
       - name: Publish output
-        run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert --dry-run
+        run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
 
