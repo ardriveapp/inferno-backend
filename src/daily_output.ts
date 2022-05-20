@@ -267,9 +267,10 @@ export class DailyOutput {
 		const tags = node.tags;
 		const dataSize = +node.data.size;
 
-		const height = edge.node.block.height;
-		const previousBlockHeight = this.previousData.blockHeight;
-		if (previousBlockHeight >= height) {
+		const heightOfPreviousRun = this.previousData.blockHeight;
+		const currentHeight = edge.node.block.height;
+		const previousHeigt = this.data.blockHeight;
+		if (heightOfPreviousRun >= currentHeight) {
 			throw new Error('That block was already processed!');
 		}
 
@@ -292,13 +293,13 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
-				console.log(`Prev block: ${this.data.blockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${previousHeigt}, current block: ${currentHeight}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
-				console.log(`Prev block: ${this.data.blockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${previousHeigt}, current block: ${currentHeight}`);
 				this.resetWeek();
 			}
 
@@ -355,7 +356,7 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
-		this.data.blockHeight = height;
+		this.data.blockHeight = currentHeight;
 	};
 
 	private isParticipatingInGroupEffort(address: string): boolean {

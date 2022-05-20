@@ -142,7 +142,7 @@ async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> 
 			continue;
 		}
 	}
-	throw new Error(`Retries on the query failed!`);
+	throw new Error(`Retries on the query failed! \n${query.query}`);
 }
 
 async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promise<void> {
