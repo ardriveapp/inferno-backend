@@ -1,4 +1,5 @@
 import { writeFileSync } from 'fs';
+import { normalize as normalizePath } from 'path';
 import { arweave, readInitialOutputFile } from './common';
 import type { Rewards } from './inferno_types';
 import Transaction from 'arweave/node/lib/transaction';
@@ -50,7 +51,7 @@ export async function distributeTokens(confirm: boolean) {
 
 		const transactionSent = await sendTransaction(transaction);
 		if (transactionSent) {
-			writeFileSync(`./distribution/${transaction.id}`, JSON.stringify(transaction, null, '\t'));
+			writeFileSync(normalizePath(`./distribution/${transaction.id}`), JSON.stringify(transaction, null, '\t'));
 			transactionsToReport.push({
 				id: transaction.id,
 				qty: transaction.qty,
@@ -60,7 +61,7 @@ export async function distributeTokens(confirm: boolean) {
 	}
 
 	console.log('Writing report to distribution/report.json');
-	writeFileSync('./distribution/report.json', JSON.stringify(transactionsToReport, null, '\t'));
+	writeFileSync(normalizePath('./distribution/report.json'), JSON.stringify(transactionsToReport, null, '\t'));
 }
 
 export async function createTransactions(wallets: Rewards): Promise<TransactionToDistribute[]> {
