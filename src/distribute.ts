@@ -36,7 +36,7 @@ export async function distributeTokens(confirm: boolean) {
 	}
 
 	const addresses = weeklyRank.groupEffortRewards.filter((wallet) => wallet.rewards > 0);
-	const transactions = await createTransactions(addresses);
+	const transactions = await createTokenDistributionTransactions(addresses);
 
 	if (confirm) {
 		console.log('========= SENDING TRANSACTIONS =========');
@@ -65,7 +65,7 @@ export async function distributeTokens(confirm: boolean) {
 	writeFileSync(normalizePath('./distribution/report.json'), JSON.stringify(transactionsToReport, null, '\t'));
 }
 
-export async function createTransactions(wallets: Rewards): Promise<TransactionToDistribute[]> {
+export async function createTokenDistributionTransactions(wallets: Rewards): Promise<TransactionToDistribute[]> {
 	const transactions: TransactionToDistribute[] = [];
 
 	for (const wallet of wallets) {
