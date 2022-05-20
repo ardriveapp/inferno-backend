@@ -93,6 +93,7 @@ export class DailyOutput {
 
 		this.caclulateChangeOfUploadVolume();
 		this.caclulateWeeklyRewards();
+		this.caclulateTotalRanks();
 
 		// compute streak rewards
 		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
@@ -186,7 +187,6 @@ export class DailyOutput {
 		for (const address in this.data.wallets) {
 			this.resetWalletWeek(address);
 		}
-		this.caclulateTotalRanks();
 		this.updateTotalRewards();
 		this.resetRanksWeek();
 	}
