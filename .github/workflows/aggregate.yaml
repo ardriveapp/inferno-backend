@@ -24,7 +24,7 @@ jobs:
       - name: Setup dependencies
         run: |
           yarn install --immutable --check-cache
-          yarn add ardrive-cli
+          yarn add -g ardrive-cli
 
       - name: Write wallet
         run: echo -n '${{ secrets.WALLET_FILE }}' | base64 --decode > /tmp/wallet
