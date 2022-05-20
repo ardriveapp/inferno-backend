@@ -123,10 +123,7 @@ export async function sendTransaction(transaction: TransactionToDistribute): Pro
 	}
 
 	try {
-		console.log(`Sending transaction ${tx.id}
-- to ${target}
-- ${qty} ARDRIVE
-`);
+		console.log(`Sending transaction ${tx.id}\n- to ${target}\n- ${qty} ARDRIVE`);
 		await arweave.transactions.post(tx);
 		return true;
 	} catch (err) {
