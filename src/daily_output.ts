@@ -5,7 +5,8 @@ import {
 	tiebreakerSortFactory,
 	ardriveOracle,
 	daysDiffInEST,
-	weeksDiffInEST
+	weeksDiffInEST,
+	changeInPercentage
 } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
@@ -90,22 +91,7 @@ export class DailyOutput {
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
-		const addresses = Object.keys(this.data.wallets);
-		addresses.forEach((address) => {
-			// daily change
-			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
-			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
-			const changeInPercentageDaily = this.changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
-			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageDaily.toFixed(2);
-
-			// weekly change
-			const uploadedDataLastWeek = this.data.wallets[address].yesterday.byteCount;
-			const uploadedDataCurrentWeek = this.data.wallets[address].daily.byteCount;
-			const changeInPercentageWeekly =
-				this.changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
-			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
-		});
-
+		this.caclulateChangeOfUploadVolume();
 		this.caclulateWeeklyRewards();
 
 		// compute streak rewards
@@ -115,18 +101,21 @@ export class DailyOutput {
 		this.data.lastUpdated = Date.now();
 	}
 
-	private changeInPercentage(prev: number, curr: number): number {
-		if (prev === 0) {
-			if (curr === 0) {
-				// Both zero, there's no change
-				return 0;
-			} else {
-				// Previous is zero, current is greater: 100% change
-				return 1;
-			}
-		} else {
-			return (curr - prev) / prev;
-		}
+	private caclulateChangeOfUploadVolume(): void {
+		const addresses = Object.keys(this.data.wallets);
+		addresses.forEach((address) => {
+			// daily change
+			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
+			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
+			const changeInPercentageDaily = changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
+			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageDaily.toFixed(2);
+
+			// weekly change
+			const uploadedDataLastWeek = this.data.wallets[address].lastWeek.byteCount;
+			const uploadedDataCurrentWeek = this.data.wallets[address].weekly.byteCount;
+			const changeInPercentageWeekly = changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
+			this.data.wallets[address].weekly.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
+		});
 	}
 
 	/**
@@ -134,6 +123,7 @@ export class DailyOutput {
 	 */
 	private resetDay(): void {
 		this.caclulateWeeklyRewards();
+		this.caclulateChangeOfUploadVolume();
 		for (const address in this.data.wallets) {
 			this.resetWalletDay(address);
 		}
@@ -159,6 +149,7 @@ export class DailyOutput {
 
 		// updates the weekly/daily ranks and rewards
 		this.data.ranks.daily.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards = addresses
+			.filter((addr) => this.data.wallets[addr].weekly.byteCount)
 			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
 			.map((address, index) => {
 				const rankPosition = index + 1;
@@ -204,6 +195,7 @@ export class DailyOutput {
 		const addresses = Object.keys(this.data.wallets);
 		// updates the total ranks
 		this.data.ranks.total.groupEffortRewards = addresses
+			.filter((addr) => this.data.wallets[addr].total.byteCount)
 			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
 			.map((address, index) => {
 				const rewards = (() => {
@@ -265,9 +257,10 @@ export class DailyOutput {
 		const tags = node.tags;
 		const dataSize = +node.data.size;
 
-		const height = edge.node.block.height;
-		const previousBlockHeight = this.previousData.blockHeight;
-		if (previousBlockHeight >= height) {
+		const heightOfPreviousRun = this.previousData.blockHeight;
+		const currentHeight = edge.node.block.height;
+		const previousHeight = this.data.blockHeight;
+		if (heightOfPreviousRun >= currentHeight) {
 			throw new Error('That block was already processed!');
 		}
 
@@ -290,13 +283,13 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
-				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${previousHeight}, current block: ${currentHeight}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
-				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${previousHeight}, current block: ${currentHeight}`);
 				this.resetWeek();
 			}
 
@@ -353,6 +346,7 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
+		this.data.blockHeight = currentHeight;
 	};
 
 	private isParticipatingInGroupEffort(address: string): boolean {
@@ -419,7 +413,7 @@ export class DailyOutput {
 		if (!this.validateDataStructure(this.data)) {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
-		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
+		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data));
 	}
 
 	/**
