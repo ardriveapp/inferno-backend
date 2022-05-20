@@ -5,7 +5,8 @@ import {
 	tiebreakerSortFactory,
 	ardriveOracle,
 	daysDiffInEST,
-	weeksDiffInEST
+	weeksDiffInEST,
+	changeInPercentage
 } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
@@ -90,22 +91,7 @@ export class DailyOutput {
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
-		const addresses = Object.keys(this.data.wallets);
-		addresses.forEach((address) => {
-			// daily change
-			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
-			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
-			const changeInPercentageDaily = this.changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
-			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageDaily.toFixed(2);
-
-			// weekly change
-			const uploadedDataLastWeek = this.data.wallets[address].yesterday.byteCount;
-			const uploadedDataCurrentWeek = this.data.wallets[address].daily.byteCount;
-			const changeInPercentageWeekly =
-				this.changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
-			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
-		});
-
+		this.caclulateChangeOfUploadVolume();
 		this.caclulateWeeklyRewards();
 
 		// compute streak rewards
@@ -115,18 +101,21 @@ export class DailyOutput {
 		this.data.lastUpdated = Date.now();
 	}
 
-	private changeInPercentage(prev: number, curr: number): number {
-		if (prev === 0) {
-			if (curr === 0) {
-				// Both zero, there's no change
-				return 0;
-			} else {
-				// Previous is zero, current is greater: 100% change
-				return 1;
-			}
-		} else {
-			return (curr - prev) / prev;
-		}
+	private caclulateChangeOfUploadVolume(): void {
+		const addresses = Object.keys(this.data.wallets);
+		addresses.forEach((address) => {
+			// daily change
+			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
+			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
+			const changeInPercentageDaily = changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
+			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageDaily.toFixed(2);
+
+			// weekly change
+			const uploadedDataLastWeek = this.data.wallets[address].lastWeek.byteCount;
+			const uploadedDataCurrentWeek = this.data.wallets[address].weekly.byteCount;
+			const changeInPercentageWeekly = changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
+			this.data.wallets[address].weekly.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
+		});
 	}
 
 	/**
@@ -134,6 +123,7 @@ export class DailyOutput {
 	 */
 	private resetDay(): void {
 		this.caclulateWeeklyRewards();
+		this.caclulateChangeOfUploadVolume();
 		for (const address in this.data.wallets) {
 			this.resetWalletDay(address);
 		}
