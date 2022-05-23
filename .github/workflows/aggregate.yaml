@@ -4,6 +4,7 @@ on:
     # at 6AM, 12AM, 6PM, and  12PM UTC
     # at 2AM, 8AM, 2PM, and  8PM EST
     - cron: "0 6/6 * * *"
+  workflow_dispatch:
 
 jobs:
   aggregate:
@@ -23,7 +24,7 @@ jobs:
       - name: Setup dependencies
         run: |
           yarn install --immutable --check-cache
-          yarn add -g ardrive-cli
+          npm install -g ardrive-cli
 
       - name: Write wallet
         run: echo -n '${{ secrets.WALLET_FILE }}' | base64 --decode > /tmp/wallet
