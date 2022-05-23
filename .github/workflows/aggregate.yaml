@@ -1,13 +1,12 @@
-
 name: Aggregate daily data
-on: 
+on:
   schedule:
     # at 6AM, 12AM, 6PM, and  12PM UTC
     # at 2AM, 8AM, 2PM, and  8PM EST
-    - cron: '0 6/6 * * *'
+    - cron: "0 6/6 * * *"
 
 jobs:
-  test-and-build:
+  aggregate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -41,3 +40,13 @@ jobs:
       - name: Publish output
         run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
 
+      - name: Commit GQL cache
+        if: always()
+        uses: github-actions-x/commit@v2.9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push-branch: "production"
+          commit-message: "chore(gql cache): updates the cached blocks PE-1270"
+          files: cache
+          name: Github Action
+          email: info@ardrive.io
