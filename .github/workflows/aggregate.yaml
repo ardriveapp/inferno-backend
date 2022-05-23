@@ -42,11 +42,9 @@ jobs:
 
       - name: Commit GQL cache
         if: always()
-        uses: github-actions-x/commit@v2.9
+        uses: actions-x/commit@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          push-branch: "production"
-          commit-message: "chore(gql cache): updates the cached blocks PE-1270"
-          files: cache
-          name: Github Action
-          email: info@ardrive.io
+          name: GitHub Actions Cache Committer
+          branch: production
+          files: ./cache
+          message: "chore(gql cache): updates the cached blocks PE-1270"
