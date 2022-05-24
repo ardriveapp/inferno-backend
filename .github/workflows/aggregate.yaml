@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-and-build:
+  aggregate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -40,3 +40,12 @@ jobs:
 
       - name: Publish output
         run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
+
+      - name: Commit GQL cache
+        if: always()
+        uses: actions-x/commit@v6
+        with:
+          name: GitHub Actions Cache Committer
+          branch: production
+          files: ./cache
+          message: "chore(gql cache): updates the cached blocks PE-1270"
