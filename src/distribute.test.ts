@@ -3,7 +3,7 @@ import { stub, spy } from 'sinon';
 import sinonChai from 'sinon-chai';
 import { arweave } from './common';
 import { stubArweaveAddress, stubTxID } from '../tests/stubs';
-import { createTransactions, sendTransaction } from './distribute';
+import { createTokenDistributionTransactions, sendTransaction } from './distribute';
 import type { TransactionToDistribute } from './distribute';
 import Transaction from 'arweave/node/lib/transaction';
 import { Rewards } from './inferno_types';
@@ -53,7 +53,7 @@ describe('distribute', () => {
 				}
 			];
 
-			const transactions = await createTransactions(rank);
+			const transactions = await createTokenDistributionTransactions(rank);
 			for (const [index, transaction] of transactions.entries()) {
 				const { id, target, qty, rankPosition } = transaction;
 
