@@ -5,7 +5,8 @@ import {
 	tiebreakerSortFactory,
 	ardriveOracle,
 	daysDiffInEST,
-	weeksDiffInEST
+	weeksDiffInEST,
+	changeInPercentage
 } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
@@ -90,22 +91,48 @@ export class DailyOutput {
 		this.data.blockHeight = this.heightRange[1];
 		this.data.timestamp = this.latestTimestamp;
 
+		this.caclulateChangeOfUploadVolume();
+		this.caclulateWeeklyRewards();
+		this.caclulateTotalRanks();
+
+		// compute streak rewards
+		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
+		// TODO: determine if the wallets has uploaded data for 7 days in a row
+
+		this.data.lastUpdated = Date.now();
+	}
+
+	private caclulateChangeOfUploadVolume(): void {
 		const addresses = Object.keys(this.data.wallets);
 		addresses.forEach((address) => {
 			// daily change
 			const uploadedDataYesterday = this.data.wallets[address].yesterday.byteCount;
 			const uploadedDataToday = this.data.wallets[address].daily.byteCount;
-			const changeInPercentageDaily = this.changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
+			const changeInPercentageDaily = changeInPercentage(uploadedDataYesterday, uploadedDataToday) * 100;
 			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageDaily.toFixed(2);
 
 			// weekly change
-			const uploadedDataLastWeek = this.data.wallets[address].yesterday.byteCount;
-			const uploadedDataCurrentWeek = this.data.wallets[address].daily.byteCount;
-			const changeInPercentageWeekly =
-				this.changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
-			this.data.wallets[address].daily.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
+			const uploadedDataLastWeek = this.data.wallets[address].lastWeek.byteCount;
+			const uploadedDataCurrentWeek = this.data.wallets[address].weekly.byteCount;
+			const changeInPercentageWeekly = changeInPercentage(uploadedDataLastWeek, uploadedDataCurrentWeek) * 100;
+			this.data.wallets[address].weekly.changeInPercentage = +changeInPercentageWeekly.toFixed(2);
 		});
+	}
 
+	/**
+	 * Will copy the data of today into yesterday's and clear the today's data
+	 */
+	private resetDay(): void {
+		this.caclulateWeeklyRewards();
+		this.caclulateChangeOfUploadVolume();
+		for (const address in this.data.wallets) {
+			this.resetWalletDay(address);
+		}
+		this.resetRanksDay();
+	}
+
+	private caclulateWeeklyRewards(): void {
+		const addresses = Object.keys(this.data.wallets);
 		// check if the minimum group effort was reached
 		const groupEffortParticipants: string[] = [];
 		const otherParticipants: string[] = [];
@@ -123,6 +150,7 @@ export class DailyOutput {
 
 		// updates the weekly/daily ranks and rewards
 		this.data.ranks.daily.groupEffortRewards = this.data.ranks.weekly.groupEffortRewards = addresses
+			.filter((addr) => this.data.wallets[addr].weekly.byteCount)
 			.sort(tiebreakerSortFactory('weekly', this.data.wallets))
 			.map((address, index) => {
 				const rankPosition = index + 1;
@@ -130,44 +158,6 @@ export class DailyOutput {
 				const rewards = hasReachedMinimumGroupEffort && isInTop50 ? GROUP_EFFORT_REWARDS[index] : 0;
 				return { address, rewards, rankPosition };
 			});
-
-		// updates the total ranks
-		this.data.ranks.total.groupEffortRewards = addresses
-			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
-			.map((address, index) => {
-				const rewards = this.data.ranks.total.groupEffortRewards[index].rewards;
-				return { address, rewards, rankPosition: index + 1 };
-			});
-
-		// compute streak rewards
-		// const stakedPSTHolders = Object.keys(this.data.PSTHolders);
-		// TODO: determine if the wallets has uploaded data for 7 days in a row
-
-		this.data.lastUpdated = Date.now();
-	}
-
-	private changeInPercentage(prev: number, curr: number): number {
-		if (prev === 0) {
-			if (curr === 0) {
-				// Both zero, there's no change
-				return 0;
-			} else {
-				// Previous is zero, current is greater: 100% change
-				return 1;
-			}
-		} else {
-			return (curr - prev) / prev;
-		}
-	}
-
-	/**
-	 * Will copy the data of today into yesterday's and clear the today's data
-	 */
-	private resetDay(): void {
-		for (const address in this.data.wallets) {
-			this.resetWalletDay(address);
-		}
-		this.resetRanksDay();
 	}
 
 	private resetWalletDay(address: string): void {
@@ -199,6 +189,27 @@ export class DailyOutput {
 		}
 		this.updateTotalRewards();
 		this.resetRanksWeek();
+	}
+
+	private caclulateTotalRanks(): void {
+		const addresses = Object.keys(this.data.wallets);
+		// updates the total ranks
+		this.data.ranks.total.groupEffortRewards = addresses
+			.filter((addr) => this.data.wallets[addr].total.byteCount)
+			.sort((address_1, address_2) => tiebreakerSortFactory('total', this.data.wallets)(address_1, address_2))
+			.map((address, index) => {
+				const rewards = (() => {
+					const prevTotal = this.data.ranks.total.groupEffortRewards.find(
+						({ address: addr }) => addr === address
+					);
+					if (prevTotal) {
+						const indexOfAddress = this.data.ranks.total.groupEffortRewards.indexOf(prevTotal);
+						return this.data.ranks.total.groupEffortRewards[indexOfAddress].rewards;
+					}
+					return 0;
+				})();
+				return { address, rewards, rankPosition: index + 1 };
+			});
 	}
 
 	private resetWalletWeek(address: string): void {
@@ -246,15 +257,15 @@ export class DailyOutput {
 		const tags = node.tags;
 		const dataSize = +node.data.size;
 
-		const height = edge.node.block.height;
-		const previousBlockHeight = this.previousData.blockHeight;
-		if (previousBlockHeight >= height) {
+		const heightOfPreviousRun = this.previousData.blockHeight;
+		const currentHeight = edge.node.block.height;
+		const previousHeight = this.data.blockHeight;
+		if (heightOfPreviousRun >= currentHeight) {
 			throw new Error('That block was already processed!');
 		}
 
 		const fee = node.fee.winston ? +node.fee.winston : undefined;
 		const tip = node.quantity.winston ? +node.quantity.winston : undefined;
-		// we are using EPSILON here to have a minimum range of error acceptance
 		const isTipValid = await validateTxTip(node, this.ardriveOracle);
 		const entityTypeTag = tags.find((tag) => tag.name === 'Entity-Type')?.value;
 		const bundleVersion = tags.find((tag) => tag.name === 'Bundle-Version')?.value;
@@ -272,18 +283,14 @@ export class DailyOutput {
 
 			const daysDiff = daysDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < daysDiff; index++) {
-				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${previousHeight}, current block: ${currentHeight}`);
 				this.resetDay();
 			}
 
 			const weeksDiff = weeksDiffInEST(previousDate, queryDate);
 			for (let index = 0; index < weeksDiff; index++) {
-				console.log(`Prev block: ${previousBlockHeight}, current block: ${height}`);
+				console.log(`Prev block: ${previousHeight}, current block: ${currentHeight}`);
 				this.resetWeek();
-			}
-
-			if (this.latestTimestamp !== node.block.timestamp) {
-				console.log(`Timestamp: ${node.block.timestamp}, block: ${node.block.height}`);
 			}
 
 			this.latestTimestamp = node.block.timestamp;
@@ -339,6 +346,7 @@ export class DailyOutput {
 				this.data.wallets[ownerAddress].weekly.blockSinceParticipating = node.block.height;
 			}
 		}
+		this.data.blockHeight = currentHeight;
 	};
 
 	private isParticipatingInGroupEffort(address: string): boolean {
@@ -405,7 +413,7 @@ export class DailyOutput {
 		if (!this.validateDataStructure(this.data)) {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
-		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data, null, '\t'));
+		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data));
 	}
 
 	/**

@@ -56,6 +56,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
             ["prettier", "npm:2.6.2"],\
+            ["redstone-isomorphic", "npm:1.1.6"],\
             ["redstone-smartweave", "npm:0.4.78"],\
             ["rimraf", "npm:3.0.2"],\
             ["sinon", "npm:13.0.2"],\
@@ -3880,6 +3881,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
             ["prettier", "npm:2.6.2"],\
+            ["redstone-isomorphic", "npm:1.1.6"],\
             ["redstone-smartweave", "npm:0.4.78"],\
             ["rimraf", "npm:3.0.2"],\
             ["sinon", "npm:13.0.2"],\

@@ -202,7 +202,6 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const bundledIn = node.bundledIn;
 	const isV2Tx = !bundledIn;
 	if (appName === WEB_APP_NAME && appVersion && !isSemanticVersionGreaterThan(appVersion, '1.14.1') && isV2Tx) {
-		console.log(`just found a v2 transaction of web <= v1.14.1`);
 		// we ignore web v2 transactions' tip as it's not possible to validate
 		return true;
 	}
@@ -213,6 +212,7 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const tipRecipientAddress = node.recipient;
 	const wasValidTipRecipient = await ardriveOracle.wasValidPSTHolder(height, tipRecipientAddress);
 
+	// we are using EPSILON here to have a minimum range of error acceptance
 	return tipPercentage + EPSILON >= 15 && wasValidTipRecipient;
 }
 
@@ -304,15 +304,33 @@ export function dateToSunday(date: Date) {
 }
 
 export function dateToEST(d: Date): Date {
-	const date = new Date(d.getTime());
-	const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
-	date.setMinutes(date.getMinutes() + offset); // date now in UTC time
-
+	const date = dateToUTC(d);
 	const easternTimeOffset = -240; // for dayLight saving, Eastern time become 4 hours behind UTC thats why its offset is -4x60 = -240 minutes. So when Day light is not active the offset will be -300
 	date.setMinutes(date.getMinutes() + easternTimeOffset);
 	return date;
 }
 
+export function dateToUTC(d: Date): Date {
+	const date = new Date(d.getTime());
+	const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
+	date.setMinutes(date.getMinutes() + offset); // date now in UTC time
+	return date;
+}
+
 export function heightAscSortFunction(edge_a: GQLEdgeInterface, edge_b: GQLEdgeInterface): number {
 	return edge_a.node.block.height - edge_b.node.block.height;
+}
+
+export function changeInPercentage(prev: number, curr: number): number {
+	if (prev === 0) {
+		if (curr === 0) {
+			// Both zero, there's no change
+			return 0;
+		} else {
+			// Previous is zero, current is greater: 100% change
+			return 1;
+		}
+	} else {
+		return (curr - prev) / prev;
+	}
 }
