@@ -3,7 +3,7 @@ import { stub, spy } from 'sinon';
 import sinonChai from 'sinon-chai';
 import { arweave } from './common';
 import { stubArweaveAddress, stubTxID } from '../tests/stubs';
-import { createTokenDistributionTransactions, sendTransaction } from './distribute';
+import { createTokenDistributionTransactions, sendTokenDistributionTransaction } from './distribute';
 import type { TransactionToDistribute } from './distribute';
 import Transaction from 'arweave/node/lib/transaction';
 import { Rewards } from './inferno_types';
@@ -24,7 +24,7 @@ function createFakeTransaction(qty: number) {
 const dummyAddTag = () => {};
 
 describe('distribute', () => {
-	describe('createTransactions function', () => {
+	describe('createTokenDistributionTransactions function', () => {
 		beforeEach(() => {
 			stub(arweave, 'createTransaction').callsFake(() => {
 				return Promise.resolve({ id: stubTxID, addTag: dummyAddTag }) as unknown as Promise<Transaction>;
@@ -65,12 +65,12 @@ describe('distribute', () => {
 		});
 	});
 
-	describe('sendTransaction function', () => {
+	describe('sendTokenDistributionTransaction function', () => {
 		it('returns false if transaction has 0 quantity', async () => {
 			const spyConsole = spy(console, 'log');
 			const transaction = createFakeTransaction(0);
 
-			const sent = await sendTransaction(transaction);
+			const sent = await sendTokenDistributionTransaction(transaction);
 			expect(sent).to.be.false;
 			expect(spyConsole).to.have.been.calledWith(
 				`Can't send transaction for wallet ${stubArweaveAddress()} as it doesn't have any reward`
@@ -84,7 +84,7 @@ describe('distribute', () => {
 
 			const transaction = createFakeTransaction(10);
 
-			const sent = await sendTransaction(transaction);
+			const sent = await sendTokenDistributionTransaction(transaction);
 			expect(sent).to.be.true;
 		});
 
@@ -97,7 +97,7 @@ describe('distribute', () => {
 
 			const transaction = createFakeTransaction(10);
 
-			const sent = await sendTransaction(transaction);
+			const sent = await sendTokenDistributionTransaction(transaction);
 			expect(sent).to.be.false;
 		});
 	});

@@ -50,7 +50,7 @@ export async function distributeTokens(confirm: boolean) {
 			return;
 		}
 
-		const transactionSent = await sendTransaction(transaction);
+		const transactionSent = await sendTokenDistributionTransaction(transaction);
 		if (transactionSent) {
 			writeFileSync(normalizePath(`./distribution/${transaction.id}`), JSON.stringify(transaction, null, '\t'));
 			transactionsToReport.push({
@@ -114,7 +114,7 @@ export async function createTokenDistributionTransactions(wallets: Rewards): Pro
 	return transactions;
 }
 
-export async function sendTransaction(transaction: TransactionToDistribute): Promise<boolean> {
+export async function sendTokenDistributionTransaction(transaction: TransactionToDistribute): Promise<boolean> {
 	const { tx, target, qty } = transaction;
 
 	if (qty === 0) {
