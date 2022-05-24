@@ -7,7 +7,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-and-build:
+  aggregate:
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -36,7 +39,25 @@ jobs:
         run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 
       - name: Run
-        run: yarn node ./lib/index.js aggregate
+        run: |
+          EXITCODE=1 && while [ $EXITCODE -eq 1 ]; do
+            yarn node ./lib/index.js aggregate;
+            EXITCODE=$?;
+            echo "Exit code: $EXITCODE";
+            if [ $EXITCODE -eq 1 ]; then
+              echo "The script will run again after a cooldown time of 30 minutes"
+              sleep 1800 # half an hour (60 * 30 seconds)
+            fi
+          done
 
       - name: Publish output
         run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
+
+      - name: Commit GQL cache
+        if: always()
+        uses: actions-x/commit@v6
+        with:
+          name: GitHub Actions Cache Committer
+          branch: production
+          files: ./cache
+          message: "chore(gql cache): updates the cached blocks PE-1270"
