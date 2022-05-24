@@ -5,3 +5,5 @@ EXITCODE=1 && while [ $EXITCODE -eq 1 ]; do
     EXITCODE=$?;
     echo "Exit code: $EXITCODE";
 done
+
+exit $EXITCODE
