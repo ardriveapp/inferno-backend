@@ -21,7 +21,7 @@ export async function distributeTokens(confirm: boolean) {
 	const weeklyRank = data.ranks.weekly;
 
 	if (!keyfile) {
-		throw new Error("There's no keyfile to create transactions");
+		throw new Error("There's no keyfile to create transactions with");
 	}
 
 	if (!weeklyRank.hasReachedMinimumGroupEffort) {
