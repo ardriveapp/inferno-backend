@@ -497,7 +497,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/chai@npm:^4":
+"@types/chai@npm:*, @types/chai@npm:^4":
   version: 4.3.1
   resolution: "@types/chai@npm:4.3.1"
   checksum: 2ee246b76c469cd620a7a1876a73bc597074361b67d547b4bd96a0c1adb43597ede2d8589ab626192e14349d83cbb646cc11e2c179eeeb43ff11596de94d82c4
@@ -621,7 +621,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/sinon@npm:^10.0.11":
+"@types/sinon-chai@npm:^3":
+  version: 3.2.8
+  resolution: "@types/sinon-chai@npm:3.2.8"
+  dependencies:
+    "@types/chai": "*"
+    "@types/sinon": "*"
+  checksum: a0f7a8cef24904db25a695f3c3adcc03ae72bab89a954c9b6e23fe7e541228e67fe4119cec069e8b36c80e9af33102b626129ff538efade9391cc0f65f1d4933
+  languageName: node
+  linkType: hard
+
+"@types/sinon@npm:*, @types/sinon@npm:^10.0.11":
   version: 10.0.11
   resolution: "@types/sinon@npm:10.0.11"
   dependencies:
@@ -3193,6 +3203,7 @@ __metadata:
     "@types/node": ^17.0.25
     "@types/node-fetch": ^2.6.1
     "@types/sinon": ^10.0.11
+    "@types/sinon-chai": ^3
     "@types/yargs": ^17
     "@typescript-eslint/eslint-plugin": ^5.20.0
     "@typescript-eslint/parser": ^5.20.0
@@ -3213,6 +3224,7 @@ __metadata:
     redstone-smartweave: 0.4.78
     rimraf: ^3.0.2
     sinon: ^13.0.2
+    sinon-chai: ^3.7.0
     smartweave: ^0.4.48
     ts-node: ^10.7.0
     typescript: ^4.6.3
@@ -5251,6 +5263,16 @@ __metadata:
   version: 3.0.7
   resolution: "signal-exit@npm:3.0.7"
   checksum: a2f098f247adc367dffc27845853e9959b9e88b01cb301658cfe4194352d8d2bb32e18467c786a7fe15f1d44b233ea35633d076d5e737870b7139949d1ab6318
+  languageName: node
+  linkType: hard
+
+"sinon-chai@npm:^3.7.0":
+  version: 3.7.0
+  resolution: "sinon-chai@npm:3.7.0"
+  peerDependencies:
+    chai: ^4.0.0
+    sinon: ">=4.0.0"
+  checksum: 49a353d8eb66cc6db35ac452f6965c72778aa090d1f036dd1e54ba88594b1c3f314b1a403eaff22a4e314f94dc92d9c7d03cbb88c21d89e814293bf5b299964d
   languageName: node
   linkType: hard
 
