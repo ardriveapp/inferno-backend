@@ -1,12 +1,13 @@
-import fs from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { ArDriveContractOracle } from './community/ardrive_contract_oracle';
 import { RedstoneContractReader } from './community/redstone_contract_reader';
 import { SmartweaveContractReader } from './community/smartweave_contract_oracle';
 import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME, BOOST_TAG, APP_NAME_TAG, APP_VERSION_TAG, WEB_APP_NAME } from './constants';
-import { WalletsStats } from './inferno_types';
+import { WalletsStats, WalletStatEntry } from './inferno_types';
 import Arweave from 'arweave';
 import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
 import { GQLNodeInterface, GQLEdgeInterface } from './gql_types';
+import { OutputData } from './inferno_types';
 
 const EPSILON = 0.1;
 
@@ -26,21 +27,126 @@ export async function getBlockHeight(): Promise<number> {
 	return (_cachedBlockHeight = blockHeight);
 }
 
-export function getMinBlockHeight(): number {
-	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
-
+/**
+ * @returns the content of the JSON template or output file
+ */
+export function readInitialOutputFile(): OutputData {
+	const hasOutputFile = existsSync(OUTPUT_NAME);
 	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
 
-	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
+	const data = (() => {
+		try {
+			return JSON.parse(readFileSync(fileToCheck).toString());
+		} catch (err) {
+			const message = (err instanceof Error && err.message) || JSON.stringify(err);
+			throw new Error(`The file contains non-json data. ${message}`);
+		}
+	})();
+	if (!validateDataStructure(data)) {
+		throw new Error(`The output JSON has a wrong structure`);
+	}
+
+	return data;
+}
+
+/**
+ * @returns the content of the JSON output file
+ */
+export function readOutputFile(): OutputData {
+	const data = (() => {
+		try {
+			return JSON.parse(readFileSync(OUTPUT_NAME).toString());
+		} catch (err) {
+			const message = (err instanceof Error && err.message) || JSON.stringify(err);
+			throw new Error(`The file contains non-json data. ${message}`);
+		}
+	})();
+	if (!validateDataStructure(data)) {
+		throw new Error(`The output JSON has a wrong structure`);
+	}
+
+	return data;
+}
+
+/**
+ * @returns the content of the JSON template file
+ */
+export function readOutputTemplateFile(): OutputData {
+	const data = (() => {
+		try {
+			return JSON.parse(readFileSync(OUTPUT_TEMPLATE_NAME).toString());
+		} catch (err) {
+			const message = (err instanceof Error && err.message) || JSON.stringify(err);
+			throw new Error(`The file contains non-json data. ${message}`);
+		}
+	})();
+	if (!validateDataStructure(data)) {
+		throw new Error(`The output JSON has a wrong structure`);
+	}
+
+	return data;
+}
+
+/**
+ * Validates certain object to match the schema of the OutputData
+ * @param data a JSON object
+ * @returns true if the data is OutputData
+ */
+export function validateDataStructure(data: unknown): data is OutputData {
+	const dataAsOutputData = data as OutputData;
+	return !!(
+		dataAsOutputData.lastUpdated &&
+		dataAsOutputData.PSTHolders &&
+		dataAsOutputData.blockHeight &&
+		dataAsOutputData.timestamp &&
+		validateWalletsStructure(dataAsOutputData.wallets) &&
+		dataAsOutputData.ranks &&
+		dataAsOutputData.ranks.daily &&
+		dataAsOutputData.ranks.weekly &&
+		dataAsOutputData.ranks.lastWeek &&
+		dataAsOutputData.ranks.total
+	);
+}
+
+export function validateWalletsStructure(wallets: unknown): wallets is WalletsStats {
+	const walletsAsWalletsStats = wallets as WalletsStats;
+	const walletsInGoodShape =
+		walletsAsWalletsStats &&
+		Object.keys(walletsAsWalletsStats).reduce((isInGoodShape, address) => {
+			const walletData = walletsAsWalletsStats[address];
+			const currentWalletInGoodShape =
+				validateWalletStatStructure(walletData.daily) &&
+				validateWalletStatStructure(walletData.yesterday) &&
+				validateWalletStatStructure(walletData.weekly) &&
+				validateWalletStatStructure(walletData.lastWeek) &&
+				validateWalletStatStructure(walletData.total);
+			return isInGoodShape && currentWalletInGoodShape;
+		}, true);
+	return walletsInGoodShape;
+}
+
+export function validateWalletStatStructure(data: unknown): data is WalletStatEntry {
+	const walletStat = data as WalletStatEntry;
+	return (
+		walletStat &&
+		Number.isInteger(walletStat.byteCount) &&
+		typeof walletStat.changeInPercentage === 'number' &&
+		!isNaN(walletStat.changeInPercentage) &&
+		Number.isInteger(walletStat.fileCount) &&
+		Number.isInteger(walletStat.rankPosition) &&
+		Number.isInteger(walletStat.tokensEarned)
+	);
+}
+
+export function getMinBlockHeight(): number {
+	const file = readInitialOutputFile();
+
 	return file.blockHeight + 1;
 }
 
 export function getLastTimestamp(): number {
-	const hasOutputFile = fs.existsSync(OUTPUT_NAME);
+	const file = readInitialOutputFile();
 
-	const fileToCheck = hasOutputFile ? OUTPUT_NAME : OUTPUT_TEMPLATE_NAME;
-
-	const file = JSON.parse(fs.readFileSync(fileToCheck).toString());
 	return file.timestamp;
 }
 
