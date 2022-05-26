@@ -1,6 +1,6 @@
 {
 	"name": "inferno-backend",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "A token distributor for the Inferno Rewards program",
 	"main": "src/index.ts",
 	"repository": "git@github.com:ardriveapp/inferno-backend.git",
