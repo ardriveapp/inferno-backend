@@ -334,3 +334,9 @@ export function changeInPercentage(prev: number, curr: number): number {
 		return (curr - prev) / prev;
 	}
 }
+
+const initialErrorDelayMS = 1000;
+export async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promise<void> {
+	const delay = Math.pow(2, retryNumber) * initialErrorDelayMS;
+	await new Promise((res) => setTimeout(res, delay));
+}

@@ -1,13 +1,12 @@
-import { GQLEdgeInterface, GQLTransactionsResultInterface } from './gql_types';
-import { Query, StakedPSTHolders } from './inferno_types';
+import { GQLEdgeInterface } from './gql_types';
+import { StakedPSTHolders } from './inferno_types';
 import { ArDriveCommunityOracle } from './community/ardrive_community_oracle';
-import { BLOCKS_PER_MONTH, GQL_URL, ITEMS_PER_REQUEST, MAX_RETRIES, TIMEOUT, VALID_APP_NAMES } from './constants';
+import { BLOCKS_PER_MONTH } from './constants';
 import { getBlockHeight, ardriveOracle } from './common';
 import { GQLCache } from './gql_cache';
-import fetch from './utils/fetch_with_timeout';
 import { HeightRange } from './height_range';
-
-const initialErrorDelayMS = 1000;
+import { getAllParsedTransactionsOfBlock } from './queries_layer_1';
+import { ardriveTxFilter } from './utils/layer_one_helpers';
 
 /**
  * Filters the result of getStakedPSTHolders in order to get the holders that staked at least ↁ200
@@ -58,155 +57,31 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 	console.log('Height ranges to query are', nonCachedRanges.length);
 
 	for (const nonCachedRange of nonCachedRanges) {
-		let hasNextPage = true;
-		let cursor = '';
+		let height = nonCachedRange.min;
 
 		console.log('Querying range', nonCachedRange);
 
-		while (hasNextPage) {
-			const query = createQuery(nonCachedRange, cursor);
-			const response = await sendQuery(query);
-			const edges = response.edges;
-			hasNextPage = response.pageInfo.hasNextPage;
-			console.log(` # Recieved ${edges.length} transactions.`, { hasNextPage });
+		while (height <= nonCachedRange.max) {
+			const edges = await getAllParsedTransactionsOfBlock(height);
+			const ardriveEdges = edges.filter(ardriveTxFilter);
+			console.log(` # Recieved ${ardriveEdges.length} transactions.`, { height });
 
-			if (!edges.length) {
+			height++;
+
+			if (!ardriveEdges.length) {
 				cache.setEmptyRange(nonCachedRange);
 				continue;
 			}
 
 			// to ensure we are querying in descendant order
-			const oldestTransaction = edges[edges.length - 1];
-			const mostRecentTransaction = edges[0];
+			const oldestTransaction = ardriveEdges[ardriveEdges.length - 1];
+			const mostRecentTransaction = ardriveEdges[0];
 			new HeightRange(oldestTransaction.node.block.height, mostRecentTransaction.node.block.height);
 
-			cursor = oldestTransaction.cursor;
-			await cache.addEdges(edges);
+			await cache.addEdges(ardriveEdges);
 		}
 	}
 	cache.done();
 	const allEdges = await cache.getAllEdgesWithinRange();
 	return allEdges;
-}
-
-/**
- * Runs the given GQL query
- * @param query the query object
- * @throws if the GW returns a syntax error
- * @returns {GQLTransactionsResultInterface} the returned transactions
- */
-async function sendQuery(query: Query): Promise<GQLTransactionsResultInterface> {
-	let pendingRetries = MAX_RETRIES;
-	let responseOk: boolean | undefined;
-
-	while (!responseOk && pendingRetries >= 0) {
-		if (pendingRetries !== MAX_RETRIES) {
-			const currentRetry = MAX_RETRIES - pendingRetries;
-			await exponentialBackOffAfterFailedRequest(currentRetry);
-		}
-
-		try {
-			const response = await fetch(
-				GQL_URL,
-				{
-					method: 'POST',
-					headers: {
-						'Accept-Encoding': 'gzip, deflate, br',
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-						Connection: 'keep-alive',
-						DNT: '1',
-						Origin: GQL_URL
-					},
-					body: JSON.stringify(query)
-				},
-				TIMEOUT
-			);
-
-			responseOk = response.ok;
-
-			const JSONBody = (await response.json()) as {
-				errors: { message: string; extensions: { code: string } };
-				data: { transactions: GQLTransactionsResultInterface };
-			};
-			const errors = !JSONBody.data && JSONBody.errors;
-			if (errors) {
-				pendingRetries--;
-				console.log(`GQL error (${pendingRetries}): ${JSON.stringify(errors)}`);
-				continue;
-			}
-			return JSONBody.data.transactions;
-		} catch (e) {
-			pendingRetries--;
-			console.log(`Error was thrown (${pendingRetries}): ${e}`);
-			continue;
-		}
-	}
-	throw new Error(`Retries on the query failed! \n${query.query}`);
-}
-
-async function exponentialBackOffAfterFailedRequest(retryNumber: number): Promise<void> {
-	const delay = Math.pow(2, retryNumber) * initialErrorDelayMS;
-	await new Promise((res) => setTimeout(res, delay));
-}
-
-/**
- * Returns a query object to match all ArDrive transactions within a range of blocks
- * @param minBlock an integer representing the block from where to query the data
- * @param maxBlock an integer representing the block until where to query the data
- * @returns
- */
-function createQuery(range: HeightRange, cursor = ''): Query {
-	return {
-		query: `
-			query {
-				transactions(
-					block: { min: ${range.min}, max: ${range.max} }
-					first: ${ITEMS_PER_REQUEST}
-					tags: [
-						{
-							name: "App-Name"
-							values: [${VALID_APP_NAMES.map((appName) => `"${appName}"`)}]
-						}
-					]
-					sort: HEIGHT_DESC
-					after: "${cursor}"
-				) {
-					pageInfo {
-						hasNextPage
-					}
-					edges {
-						cursor
-						node {
-							id
-							owner {
-								address
-							}
-							recipient
-							bundledIn {
-								id
-							}
-							tags {
-								name
-								value
-							}
-							data {
-								size
-								type
-							}
-							quantity {
-								winston
-							}
-							fee {
-								winston
-							}
-							block {
-								timestamp
-								height
-							}
-						}
-					}
-				}
-			}`
-	};
 }
