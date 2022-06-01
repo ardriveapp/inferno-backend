@@ -69,7 +69,7 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 			height++;
 
 			if (!ardriveEdges.length) {
-				cache.setEmptyRange(new HeightRange(height, height));
+				cache.setEmptyRange(new HeightRange(height - 1, height - 1));
 				continue;
 			}
 
