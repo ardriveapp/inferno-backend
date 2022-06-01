@@ -37,7 +37,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/jwk-to-pem", "npm:2.0.1"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
-            ["@types/node-fetch", "npm:2.6.1"],\
             ["@types/sinon", "npm:10.0.11"],\
             ["@types/sinon-chai", "npm:3.2.8"],\
             ["@types/yargs", "npm:17.0.10"],\
@@ -55,7 +54,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["husky", "npm:7.0.4"],\
             ["lint-staged", "npm:11.2.6"],\
             ["mocha", "npm:9.2.2"],\
-            ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
             ["p-limit", "npm:3.1.0"],\
             ["prettier", "npm:2.6.2"],\
@@ -762,17 +760,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-node-npm-17.0.25-cd1a2f2374-6a820bd624.zip/node_modules/@types/node/",\
           "packageDependencies": [\
             ["@types/node", "npm:17.0.25"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["@types/node-fetch", [\
-        ["npm:2.6.1", {\
-          "packageLocation": "./.yarn/cache/@types-node-fetch-npm-2.6.1-cb57369c1c-a3e5d7f413.zip/node_modules/@types/node-fetch/",\
-          "packageDependencies": [\
-            ["@types/node-fetch", "npm:2.6.1"],\
-            ["@types/node", "npm:17.0.25"],\
-            ["form-data", "npm:3.0.1"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -3308,16 +3295,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["form-data", [\
-        ["npm:3.0.1", {\
-          "packageLocation": "./.yarn/cache/form-data-npm-3.0.1-d080d436e0-b019e8d35c.zip/node_modules/form-data/",\
-          "packageDependencies": [\
-            ["form-data", "npm:3.0.1"],\
-            ["asynckit", "npm:0.4.0"],\
-            ["combined-stream", "npm:1.0.8"],\
-            ["mime-types", "npm:2.1.35"]\
-          ],\
-          "linkType": "HARD"\
-        }],\
         ["npm:4.0.0", {\
           "packageLocation": "./.yarn/cache/form-data-npm-4.0.0-916facec2d-01135bf867.zip/node_modules/form-data/",\
           "packageDependencies": [\
@@ -3895,7 +3872,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/jwk-to-pem", "npm:2.0.1"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
-            ["@types/node-fetch", "npm:2.6.1"],\
             ["@types/sinon", "npm:10.0.11"],\
             ["@types/sinon-chai", "npm:3.2.8"],\
             ["@types/yargs", "npm:17.0.10"],\
@@ -3913,7 +3889,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["husky", "npm:7.0.4"],\
             ["lint-staged", "npm:11.2.6"],\
             ["mocha", "npm:9.2.2"],\
-            ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
             ["p-limit", "npm:3.1.0"],\
             ["prettier", "npm:2.6.2"],\
@@ -5224,15 +5199,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@sinonjs/text-encoding", "npm:0.7.1"],\
             ["just-extend", "npm:4.2.1"],\
             ["path-to-regexp", "npm:1.8.0"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["node-fetch", [\
-        ["npm:2.6.1", {\
-          "packageLocation": "./.yarn/cache/node-fetch-npm-2.6.1-46c670dbc1-91075bedd5.zip/node_modules/node-fetch/",\
-          "packageDependencies": [\
-            ["node-fetch", "npm:2.6.1"]\
           ],\
           "linkType": "HARD"\
         }]\
