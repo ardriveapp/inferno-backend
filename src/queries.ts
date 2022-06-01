@@ -6,7 +6,7 @@ import { getBlockHeight, ardriveOracle } from './common';
 import { GQLCache } from './gql_cache';
 import { HeightRange } from './height_range';
 import { getAllParsedTransactionsOfBlock } from './queries_layer_1';
-import { ardriveTxFilter } from './utils/layer_one_helpers';
+import { ardriveTxFilter } from './utils/layer_1_helpers';
 
 /**
  * Filters the result of getStakedPSTHolders in order to get the holders that staked at least ↁ200
