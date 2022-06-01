@@ -1,11 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import axiosRetry, { exponentialDelay } from 'axios-retry';
-import { WINSTON_AR_ASPECT } from './constants';
+import { MAX_RETRIES, WINSTON_AR_ASPECT } from './constants';
 import { GQLEdgeInterface, GQLTagInterface } from './gql_types';
 import { decodeTags, fromB64Url, sha256B64Url } from './utils/layer_one_helpers';
 import * as pLimit from 'p-limit';
-
-const maxRetries = 8;
 
 export async function getAllParsedTransactionsOfBlock(height: number): Promise<GQLEdgeInterface[]> {
 	const block = await getBlock(height);
@@ -59,7 +57,7 @@ async function getAllTransactionsOfBlock(
 	const blockTxIDs = block.txs;
 
 	axiosRetry(axiosInstance, {
-		retries: maxRetries,
+		retries: MAX_RETRIES,
 		retryDelay: (retryNumber) => {
 			// 	console.error(`Retry attempt ${retryNumber}/${maxRetries} of request to ${reqURL}`);
 			return exponentialDelay(retryNumber);
@@ -87,7 +85,7 @@ async function getAllTransactionsOfBlock(
 
 async function getBlock(height: number, axiosInstance: AxiosInstance = axios.create()): Promise<L1Block> {
 	axiosRetry(axiosInstance, {
-		retries: maxRetries,
+		retries: MAX_RETRIES,
 		retryDelay: (retryNumber) => {
 			// 	console.error(`Retry attempt ${retryNumber}/${maxRetries} of request to ${reqURL}`);
 			return exponentialDelay(retryNumber);
