@@ -46,6 +46,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["arweave", "npm:1.10.23"],\
             ["axios", "npm:0.27.2"],\
+            ["axios-retry", "npm:3.2.5"],\
             ["chai", "npm:4.3.6"],\
             ["crypto", "npm:1.0.1"],\
             ["eslint", "npm:8.13.0"],\
@@ -56,6 +57,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["mocha", "npm:9.2.2"],\
             ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
+            ["p-limit", "npm:3.1.0"],\
             ["prettier", "npm:2.6.2"],\
             ["redstone-isomorphic", "npm:1.1.6"],\
             ["redstone-smartweave", "npm:0.4.78"],\
@@ -306,6 +308,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@babel/parser", "npm:7.17.9"],\
             ["@babel/types", "npm:7.17.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@babel/runtime", [\
+        ["npm:7.18.3", {\
+          "packageLocation": "./.yarn/cache/@babel-runtime-npm-7.18.3-1883c70fa6-db8526226a.zip/node_modules/@babel/runtime/",\
+          "packageDependencies": [\
+            ["@babel/runtime", "npm:7.18.3"],\
+            ["regenerator-runtime", "npm:0.13.9"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -1564,6 +1576,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["axios", "npm:0.27.2"],\
             ["follow-redirects", "virtual:dbe3a48aea1dd5649e16abaf23d4ae05582d2149e16141955113766a0f84f681baf358c77ddccfc82eb23e4ccc66c6c912df62a9c01f2a83f1842bf86cc297b1#npm:1.15.0"],\
             ["form-data", "npm:4.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["axios-retry", [\
+        ["npm:3.2.5", {\
+          "packageLocation": "./.yarn/cache/axios-retry-npm-3.2.5-4ce5091297-c0a7aab485.zip/node_modules/axios-retry/",\
+          "packageDependencies": [\
+            ["axios-retry", "npm:3.2.5"],\
+            ["@babel/runtime", "npm:7.18.3"],\
+            ["is-retry-allowed", "npm:2.2.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -3881,6 +3904,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["arweave", "npm:1.10.23"],\
             ["axios", "npm:0.27.2"],\
+            ["axios-retry", "npm:3.2.5"],\
             ["chai", "npm:4.3.6"],\
             ["crypto", "npm:1.0.1"],\
             ["eslint", "npm:8.13.0"],\
@@ -3891,6 +3915,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["mocha", "npm:9.2.2"],\
             ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
+            ["p-limit", "npm:3.1.0"],\
             ["prettier", "npm:2.6.2"],\
             ["redstone-isomorphic", "npm:1.1.6"],\
             ["redstone-smartweave", "npm:0.4.78"],\
@@ -4176,6 +4201,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/is-regexp-npm-1.0.0-8f95f51a0c-be692828e2.zip/node_modules/is-regexp/",\
           "packageDependencies": [\
             ["is-regexp", "npm:1.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["is-retry-allowed", [\
+        ["npm:2.2.0", {\
+          "packageLocation": "./.yarn/cache/is-retry-allowed-npm-2.2.0-b4b58fc581-3d1103a929.zip/node_modules/is-retry-allowed/",\
+          "packageDependencies": [\
+            ["is-retry-allowed", "npm:2.2.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -5897,6 +5931,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["redstone-wasm-metering", "npm:1.0.0"],\
             ["leb128", "npm:0.0.4"],\
             ["redstone-wasm-json-toolkit", "npm:1.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["regenerator-runtime", [\
+        ["npm:0.13.9", {\
+          "packageLocation": "./.yarn/cache/regenerator-runtime-npm-0.13.9-6d02340eec-65ed455fe5.zip/node_modules/regenerator-runtime/",\
+          "packageDependencies": [\
+            ["regenerator-runtime", "npm:0.13.9"]\
           ],\
           "linkType": "HARD"\
         }]\

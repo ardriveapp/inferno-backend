@@ -1,8 +1,11 @@
-import fetch from 'node-fetch';
-import { exponentialBackOffAfterFailedRequest } from './common';
-import { MAX_RETRIES, WINSTON_AR_ASPECT } from './constants';
+import axios, { AxiosInstance } from 'axios';
+import axiosRetry, { exponentialDelay } from 'axios-retry';
+import { WINSTON_AR_ASPECT } from './constants';
 import { GQLEdgeInterface, GQLTagInterface } from './gql_types';
 import { decodeTags, fromB64Url, sha256B64Url } from './utils/layer_one_helpers';
+import * as pLimit from 'p-limit';
+
+const maxRetries = 8;
 
 export async function getAllParsedTransactionsOfBlock(height: number): Promise<GQLEdgeInterface[]> {
 	const block = await getBlock(height);
@@ -49,53 +52,51 @@ function parseLayer1Tx(block: L1Block, tx: L1Transaction): GQLEdgeInterface {
 	return edge;
 }
 
-async function getAllTransactionsOfBlock(block: L1Block): Promise<L1Transaction[]> {
-	let pendingRetries = MAX_RETRIES;
-	let responseOk: boolean | undefined;
+async function getAllTransactionsOfBlock(
+	block: L1Block,
+	axiosInstance: AxiosInstance = axios.create()
+): Promise<L1Transaction[]> {
+	const blockTxIDs = block.txs;
 
-	while (!responseOk && pendingRetries >= 0) {
-		const currentRetry = MAX_RETRIES - pendingRetries;
-		if (pendingRetries !== MAX_RETRIES) {
-			await exponentialBackOffAfterFailedRequest(currentRetry);
+	axiosRetry(axiosInstance, {
+		retries: maxRetries,
+		retryDelay: (retryNumber) => {
+			// 	console.error(`Retry attempt ${retryNumber}/${maxRetries} of request to ${reqURL}`);
+			return exponentialDelay(retryNumber);
 		}
+	});
 
-		try {
-			const txIDs = block.txs;
-			const requests = txIDs.map((txId) => fetch(`https://arweave.net/tx/${txId}`));
-			const responses = await Promise.all(requests);
-			const transactions: L1Transaction[] = await Promise.all(responses.map((resp) => resp.json()));
-			return transactions;
-		} catch (e) {
-			pendingRetries--;
-			console.log(`Error was thrown (${currentRetry}): ${e}`);
-			continue;
+	const parallelize = pLimit.default(25);
+
+	const responses = await Promise.all(
+		blockTxIDs.map((txid) => {
+			return parallelize(() => {
+				return axiosInstance.get(`https://arweave.net/tx/${txid}`);
+			});
+		})
+	);
+
+	responses.forEach((resp) => {
+		if (resp.status !== 200) {
+			console.log(`Response code (${resp.status}): ${resp.statusText}`);
 		}
-	}
-	throw new Error(`Retries on the transactions query failed! Block: ${block.height}`);
+	});
+
+	return responses.map((resp) => resp.data);
 }
 
-async function getBlock(height: number): Promise<L1Block> {
-	let pendingRetries = MAX_RETRIES;
-	let responseOk: boolean | undefined;
-
-	while (!responseOk && pendingRetries >= 0) {
-		const currentRetry = MAX_RETRIES - pendingRetries;
-		if (pendingRetries !== MAX_RETRIES) {
-			await exponentialBackOffAfterFailedRequest(currentRetry);
+async function getBlock(height: number, axiosInstance: AxiosInstance = axios.create()): Promise<L1Block> {
+	axiosRetry(axiosInstance, {
+		retries: maxRetries,
+		retryDelay: (retryNumber) => {
+			// 	console.error(`Retry attempt ${retryNumber}/${maxRetries} of request to ${reqURL}`);
+			return exponentialDelay(retryNumber);
 		}
-
-		try {
-			const url = `https://arweave.net/block/height/${height}`;
-			const response = await fetch(url);
-			const block: L1Block = await response.json();
-			return block;
-		} catch (e) {
-			pendingRetries--;
-			console.log(`Error was thrown (${currentRetry}): ${e}`);
-			continue;
-		}
-	}
-	throw new Error(`Retries on the block query failed! Block: ${height}`);
+	});
+	const url = `https://arweave.net/block/height/${height}`;
+	const response = await axiosInstance.get(url);
+	const block: L1Block = response.data;
+	return block;
 }
 
 interface L1Block {

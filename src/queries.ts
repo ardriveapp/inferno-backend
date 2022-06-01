@@ -66,12 +66,13 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 			const ardriveEdges = edges.filter(ardriveTxFilter);
 			console.log(` # Recieved ${ardriveEdges.length} transactions.`, { height });
 
-			height++;
-
 			if (!ardriveEdges.length) {
-				cache.setEmptyRange(new HeightRange(height - 1, height - 1));
+				cache.setEmptyRange(new HeightRange(height, height));
+				height++;
 				continue;
 			}
+
+			height++;
 
 			// to ensure we are querying in descendant order
 			const oldestTransaction = ardriveEdges[ardriveEdges.length - 1];
