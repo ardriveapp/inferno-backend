@@ -2,8 +2,10 @@ import axios, { AxiosInstance } from 'axios';
 import axiosRetry, { exponentialDelay } from 'axios-retry';
 import { MAX_RETRIES, WINSTON_AR_ASPECT } from './constants';
 import { GQLEdgeInterface, GQLTagInterface } from './gql_types';
-import { decodeTags, fromB64Url, sha256B64Url } from './utils/layer_one_helpers';
-import * as pLimit from 'p-limit';
+import { decodeTags, fromB64Url, sha256B64Url } from './utils/layer_1_helpers';
+import * as plimit from 'p-limit';
+
+const pLimit = plimit.default;
 
 export async function getAllParsedTransactionsOfBlock(height: number): Promise<GQLEdgeInterface[]> {
 	const block = await getBlock(height);
@@ -64,7 +66,7 @@ async function getAllTransactionsOfBlock(
 		}
 	});
 
-	const parallelize = pLimit.default(25);
+	const parallelize = pLimit(25);
 
 	const responses = await Promise.all(
 		blockTxIDs.map((txid) => {
