@@ -20,14 +20,19 @@ export class HeightRange {
 		}
 		let cursor = this.min;
 		const holes: HeightRange[] = [];
-		ranges.forEach((range) => {
-			if (range.min !== cursor) {
-				holes.push(new HeightRange(cursor, range.min - 1));
+		try {
+			ranges.forEach((range) => {
+				if (range.min !== cursor) {
+					holes.push(new HeightRange(cursor, range.min - 1));
+				}
+				cursor = Math.min(range.max + 1, this.max);
+			});
+			if (this.max !== cursor) {
+				holes.push(new HeightRange(cursor, this.max));
 			}
-			cursor = Math.min(range.max + 1, this.max);
-		});
-		if (this.max !== cursor) {
-			holes.push(new HeightRange(cursor, this.max));
+		} catch (e) {
+			const message = e instanceof Error ? e.message : JSON.stringify(e);
+			throw new Error(`Ranges are overlapping. ${message}`);
 		}
 		return holes;
 	}

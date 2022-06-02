@@ -10,7 +10,7 @@ export const GROUP_EFFORT_REWARDS = [
 ] as const;
 export const GQL_URL = 'https://arweave.net/graphql';
 export const ITEMS_PER_REQUEST = 100;
-export const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'] as const;
+export const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'];
 export const BLOCKS_PER_MONTH = 21600;
 export const MAX_RETRIES = 10;
 export const TIMEOUT = 40000;
@@ -29,3 +29,4 @@ export const APP_NAME_TAG = 'App-Name';
 export const BOOST_TAG = 'Boost';
 export const APP_VERSION_TAG = 'App-Version';
 export const WEB_APP_NAME = 'ArDrive-Web';
+export const WINSTON_AR_ASPECT = 1_000_000_000_000;
