@@ -64,7 +64,7 @@ export async function getAllArDriveTransactionsWithin(range: HeightRange): Promi
 		while (height <= nonCachedRange.max) {
 			const edges = await getAllParsedTransactionsOfBlock(height);
 			const ardriveEdges = edges.filter(ardriveTxFilter);
-			console.log(` # Recieved ${ardriveEdges.length} transactions.`, { height });
+			console.log(` # Received ${ardriveEdges.length} transactions.`, { height });
 
 			if (!ardriveEdges.length) {
 				cache.setEmptyRange(new HeightRange(height, height));

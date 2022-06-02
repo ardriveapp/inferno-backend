@@ -57,11 +57,32 @@ async function getAllTransactionsOfBlock(
 	axiosInstance: AxiosInstance = axios.create()
 ): Promise<L1Transaction[]> {
 	const blockTxIDs = block.txs;
+	console.log(`Fetching ${blockTxIDs.length} transactions from block with height: ${block.height}`);
+
+	const before = Date.now();
+	let numThrottledReqs = 0;
 
 	axiosRetry(axiosInstance, {
 		retries: MAX_RETRIES,
+		retryCondition: (error) => {
+			console.error(`Retrying...`);
+			if (error.response) {
+				const responseStatus = error.response.status;
+				if (responseStatus === 429) {
+					console.log('Throttled!');
+					numThrottledReqs++;
+				}
+				return responseStatus === 429 || (responseStatus >= 500 && responseStatus <= 599);
+			} else {
+				return true;
+			}
+		},
 		retryDelay: (retryNumber) => {
 			// 	console.error(`Retry attempt ${retryNumber}/${maxRetries} of request to ${reqURL}`);
+			if (numThrottledReqs > 0) {
+				numThrottledReqs--;
+				return 60000;
+			}
 			return exponentialDelay(retryNumber);
 		}
 	});
@@ -81,6 +102,11 @@ async function getAllTransactionsOfBlock(
 			console.log(`Response code (${resp.status}): ${resp.statusText}`);
 		}
 	});
+
+	const after = Date.now();
+	const diff = after - before;
+	const msPerTx = blockTxIDs.length ? diff / blockTxIDs.length : 0;
+	console.log('Timings', { msPerTx });
 
 	return responses.map((resp) => resp.data);
 }
