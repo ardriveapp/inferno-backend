@@ -10,47 +10,48 @@ const pLimit = plimit.default;
 export async function getAllParsedTransactionsOfBlock(height: number): Promise<GQLEdgeInterface[]> {
 	const block = await getBlock(height);
 	const txs = await getAllTransactionsOfBlock(block);
-	return txs.map(parseLayer1Tx.bind(undefined, block));
+	return txs.map(parseLayer1TxFactory(block));
 }
 
-function parseLayer1Tx(block: L1Block, tx: L1Transaction): GQLEdgeInterface {
-	const edge: GQLEdgeInterface = {
-		cursor: 'unused',
-		node: {
-			id: tx.id,
-			signature: tx.signature,
-			recipient: tx.target,
-			quantity: {
-				winston: tx.quantity,
-				ar: `${+tx.quantity / WINSTON_AR_ASPECT}`
-			},
-			fee: {
-				winston: tx.reward,
-				ar: `${+tx.reward / WINSTON_AR_ASPECT}`
-			},
-			data: {
-				size: +tx.data_size,
-				type: ''
-			},
-			block: {
-				height: block.height,
-				timestamp: block.timestamp,
-				id: block.hash,
-				previous: block.previous_block
-			},
-			owner: {
-				address: sha256B64Url(fromB64Url(tx.owner)),
-				key: tx.owner
-			},
-			parent: {
-				id: tx.last_tx
-			},
-			anchor: 'unused',
-			tags: decodeTags(tx.tags)
-		}
+const parseLayer1TxFactory = (block: L1Block) =>
+	function (tx: L1Transaction): GQLEdgeInterface {
+		const edge: GQLEdgeInterface = {
+			cursor: 'unused',
+			node: {
+				id: tx.id,
+				signature: tx.signature,
+				recipient: tx.target,
+				quantity: {
+					winston: tx.quantity,
+					ar: `${+tx.quantity / WINSTON_AR_ASPECT}`
+				},
+				fee: {
+					winston: tx.reward,
+					ar: `${+tx.reward / WINSTON_AR_ASPECT}`
+				},
+				data: {
+					size: +tx.data_size,
+					type: ''
+				},
+				block: {
+					height: block.height,
+					timestamp: block.timestamp,
+					id: block.hash,
+					previous: block.previous_block
+				},
+				owner: {
+					address: sha256B64Url(fromB64Url(tx.owner)),
+					key: tx.owner
+				},
+				parent: {
+					id: tx.last_tx
+				},
+				anchor: 'unused',
+				tags: decodeTags(tx.tags)
+			}
+		};
+		return edge;
 	};
-	return edge;
-}
 
 async function getAllTransactionsOfBlock(
 	block: L1Block,
@@ -96,12 +97,6 @@ async function getAllTransactionsOfBlock(
 			});
 		})
 	);
-
-	responses.forEach((resp) => {
-		if (resp.status !== 200) {
-			console.log(`Response code (${resp.status}): ${resp.statusText}`);
-		}
-	});
 
 	const after = Date.now();
 	const diff = after - before;
