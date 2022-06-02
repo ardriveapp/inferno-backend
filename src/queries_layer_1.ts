@@ -3,9 +3,7 @@ import axiosRetry, { exponentialDelay } from 'axios-retry';
 import { MAX_RETRIES, WINSTON_AR_ASPECT } from './constants';
 import { GQLEdgeInterface, GQLTagInterface } from './gql_types';
 import { decodeTags, fromB64Url, sha256B64Url } from './utils/layer_1_helpers';
-import * as plimit from 'p-limit';
-
-const pLimit = plimit.default;
+import { default as pLimit } from 'p-limit';
 
 export async function getAllParsedTransactionsOfBlock(height: number): Promise<GQLEdgeInterface[]> {
 	const block = await getBlock(height);
