@@ -37,7 +37,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/jwk-to-pem", "npm:2.0.1"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
-            ["@types/node-fetch", "npm:2.6.1"],\
             ["@types/sinon", "npm:10.0.11"],\
             ["@types/sinon-chai", "npm:3.2.8"],\
             ["@types/yargs", "npm:17.0.10"],\
@@ -46,15 +45,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["arweave", "npm:1.10.23"],\
             ["axios", "npm:0.27.2"],\
+            ["axios-retry", "npm:3.2.5"],\
             ["chai", "npm:4.3.6"],\
+            ["crypto", "npm:1.0.1"],\
             ["eslint", "npm:8.13.0"],\
             ["eslint-config-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:8.5.0"],\
             ["eslint-plugin-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:4.0.0"],\
             ["husky", "npm:7.0.4"],\
             ["lint-staged", "npm:11.2.6"],\
             ["mocha", "npm:9.2.2"],\
-            ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
+            ["p-limit", "npm:3.1.0"],\
             ["prettier", "npm:2.6.2"],\
             ["redstone-isomorphic", "npm:1.1.6"],\
             ["redstone-smartweave", "npm:0.4.78"],\
@@ -305,6 +306,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@babel/parser", "npm:7.17.9"],\
             ["@babel/types", "npm:7.17.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@babel/runtime", [\
+        ["npm:7.18.3", {\
+          "packageLocation": "./.yarn/cache/@babel-runtime-npm-7.18.3-1883c70fa6-db8526226a.zip/node_modules/@babel/runtime/",\
+          "packageDependencies": [\
+            ["@babel/runtime", "npm:7.18.3"],\
+            ["regenerator-runtime", "npm:0.13.9"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -749,17 +760,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-node-npm-17.0.25-cd1a2f2374-6a820bd624.zip/node_modules/@types/node/",\
           "packageDependencies": [\
             ["@types/node", "npm:17.0.25"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["@types/node-fetch", [\
-        ["npm:2.6.1", {\
-          "packageLocation": "./.yarn/cache/@types-node-fetch-npm-2.6.1-cb57369c1c-a3e5d7f413.zip/node_modules/@types/node-fetch/",\
-          "packageDependencies": [\
-            ["@types/node-fetch", "npm:2.6.1"],\
-            ["@types/node", "npm:17.0.25"],\
-            ["form-data", "npm:3.0.1"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -1567,6 +1567,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["axios-retry", [\
+        ["npm:3.2.5", {\
+          "packageLocation": "./.yarn/cache/axios-retry-npm-3.2.5-4ce5091297-c0a7aab485.zip/node_modules/axios-retry/",\
+          "packageDependencies": [\
+            ["axios-retry", "npm:3.2.5"],\
+            ["@babel/runtime", "npm:7.18.3"],\
+            ["is-retry-allowed", "npm:2.2.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["balanced-match", [\
         ["npm:1.0.2", {\
           "packageLocation": "./.yarn/cache/balanced-match-npm-1.0.2-a53c126459-9706c088a2.zip/node_modules/balanced-match/",\
@@ -2293,6 +2304,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["path-key", "npm:3.1.1"],\
             ["shebang-command", "npm:2.0.0"],\
             ["which", "npm:2.0.2"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["crypto", [\
+        ["npm:1.0.1", {\
+          "packageLocation": "./.yarn/cache/crypto-npm-1.0.1-7cb8e3dca6-087fe3165b.zip/node_modules/crypto/",\
+          "packageDependencies": [\
+            ["crypto", "npm:1.0.1"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -3275,16 +3295,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["form-data", [\
-        ["npm:3.0.1", {\
-          "packageLocation": "./.yarn/cache/form-data-npm-3.0.1-d080d436e0-b019e8d35c.zip/node_modules/form-data/",\
-          "packageDependencies": [\
-            ["form-data", "npm:3.0.1"],\
-            ["asynckit", "npm:0.4.0"],\
-            ["combined-stream", "npm:1.0.8"],\
-            ["mime-types", "npm:2.1.35"]\
-          ],\
-          "linkType": "HARD"\
-        }],\
         ["npm:4.0.0", {\
           "packageLocation": "./.yarn/cache/form-data-npm-4.0.0-916facec2d-01135bf867.zip/node_modules/form-data/",\
           "packageDependencies": [\
@@ -3862,7 +3872,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/jwk-to-pem", "npm:2.0.1"],\
             ["@types/mocha", "npm:9.1.1"],\
             ["@types/node", "npm:17.0.25"],\
-            ["@types/node-fetch", "npm:2.6.1"],\
             ["@types/sinon", "npm:10.0.11"],\
             ["@types/sinon-chai", "npm:3.2.8"],\
             ["@types/yargs", "npm:17.0.10"],\
@@ -3871,15 +3880,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@yarnpkg/sdks", "npm:3.0.0-rc.2"],\
             ["arweave", "npm:1.10.23"],\
             ["axios", "npm:0.27.2"],\
+            ["axios-retry", "npm:3.2.5"],\
             ["chai", "npm:4.3.6"],\
+            ["crypto", "npm:1.0.1"],\
             ["eslint", "npm:8.13.0"],\
             ["eslint-config-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:8.5.0"],\
             ["eslint-plugin-prettier", "virtual:069fabdc060d2c8b19253b44518decc75eaa2ad1ee01a88275ef16d7683af3f72aa0b45eda44486f324ad3a090c3e580d115644199323f43d79badefcb9ea544#npm:4.0.0"],\
             ["husky", "npm:7.0.4"],\
             ["lint-staged", "npm:11.2.6"],\
             ["mocha", "npm:9.2.2"],\
-            ["node-fetch", "npm:2.6.1"],\
             ["nyc", "npm:15.1.0"],\
+            ["p-limit", "npm:3.1.0"],\
             ["prettier", "npm:2.6.2"],\
             ["redstone-isomorphic", "npm:1.1.6"],\
             ["redstone-smartweave", "npm:0.4.78"],\
@@ -4165,6 +4176,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/is-regexp-npm-1.0.0-8f95f51a0c-be692828e2.zip/node_modules/is-regexp/",\
           "packageDependencies": [\
             ["is-regexp", "npm:1.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["is-retry-allowed", [\
+        ["npm:2.2.0", {\
+          "packageLocation": "./.yarn/cache/is-retry-allowed-npm-2.2.0-b4b58fc581-3d1103a929.zip/node_modules/is-retry-allowed/",\
+          "packageDependencies": [\
+            ["is-retry-allowed", "npm:2.2.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -5183,15 +5203,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
-      ["node-fetch", [\
-        ["npm:2.6.1", {\
-          "packageLocation": "./.yarn/cache/node-fetch-npm-2.6.1-46c670dbc1-91075bedd5.zip/node_modules/node-fetch/",\
-          "packageDependencies": [\
-            ["node-fetch", "npm:2.6.1"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
       ["node-gyp", [\
         ["npm:9.0.0", {\
           "packageLocation": "./.yarn/unplugged/node-gyp-npm-9.0.0-0eccfca4d1/node_modules/node-gyp/",\
@@ -5886,6 +5897,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["redstone-wasm-metering", "npm:1.0.0"],\
             ["leb128", "npm:0.0.4"],\
             ["redstone-wasm-json-toolkit", "npm:1.0.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["regenerator-runtime", [\
+        ["npm:0.13.9", {\
+          "packageLocation": "./.yarn/cache/regenerator-runtime-npm-0.13.9-6d02340eec-65ed455fe5.zip/node_modules/regenerator-runtime/",\
+          "packageDependencies": [\
+            ["regenerator-runtime", "npm:0.13.9"]\
           ],\
           "linkType": "HARD"\
         }]\

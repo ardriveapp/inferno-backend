@@ -1,6 +1,6 @@
 {
 	"name": "inferno-backend",
-	"version": "1.0.3",
+	"version": "1.1.0",
 	"description": "A token distributor for the Inferno Rewards program",
 	"main": "src/index.ts",
 	"repository": "git@github.com:ardriveapp/inferno-backend.git",
@@ -49,10 +49,11 @@
 		"typescript": "^4.6.3"
 	},
 	"dependencies": {
-		"@types/node-fetch": "^2.6.1",
 		"arweave": "1.10.23",
 		"axios": "^0.27.2",
-		"node-fetch": "2.6.1",
+		"axios-retry": "^3.2.5",
+		"crypto": "^1.0.1",
+		"p-limit": "3.1.0",
 		"redstone-smartweave": "0.4.78",
 		"smartweave": "^0.4.48",
 		"yargs": "^17.4.1"
