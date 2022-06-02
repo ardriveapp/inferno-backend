@@ -1,54 +1,53 @@
 name: Aggregate daily data
 on:
-  schedule:
-    # at 6AM, 12AM, 6PM, and  12PM UTC
-    # at 2AM, 8AM, 2PM, and  8PM EST
-    - cron: "0 6/6 * * *"
-  workflow_dispatch:
+    schedule:
+        # every 30 minutes
+        - cron: '*/30 * * * *'
+    workflow_dispatch:
 
 jobs:
-  aggregate:
-    concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set NodeJS version
-        id: node_version
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+    aggregate:
+        concurrency:
+            group: ${{ github.workflow }}
+            cancel-in-progress: true
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Set NodeJS version
+              id: node_version
+              run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
 
-      - name: Set Up NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ steps.node_version.outputs.NODE_VERSION }}
-          cache: "yarn"
+            - name: Set Up NodeJS
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ steps.node_version.outputs.NODE_VERSION }}
+                  cache: 'yarn'
 
-      - name: Setup dependencies
-        run: |
-          yarn install --immutable --check-cache
-          npm install -g ardrive-cli
+            - name: Setup dependencies
+              run: |
+                  yarn install --immutable --check-cache
+                  npm install -g ardrive-cli
 
-      - name: Write wallet
-        run: echo -n '${{ secrets.WALLET_FILE }}' | base64 --decode > /tmp/wallet
+            - name: Write wallet
+              run: echo -n '${{ secrets.WALLET_FILE }}' | base64 --decode > /tmp/wallet
 
-      - name: Build
-        run: yarn build
+            - name: Build
+              run: yarn build
 
-      - name: Fetch previous output
-        run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
+            - name: Fetch previous output
+              run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 
-      - name: Run
-        run: bash ".github/workflows/aggregate.sh"
+            - name: Run
+              run: bash ".github/workflows/aggregate.sh"
 
-      - name: Publish output
-        run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
+            - name: Publish output
+              run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
 
-      - name: Commit GQL cache
-        if: always()
-        uses: actions-x/commit@v6
-        with:
-          name: GitHub Actions Cache Committer
-          branch: production
-          files: ./cache
-          message: "chore(gql cache): updates the cached blocks PE-1270"
+            - name: Commit GQL cache
+              if: always()
+              uses: actions-x/commit@v6
+              with:
+                  name: GitHub Actions Cache Committer
+                  branch: production
+                  files: ./cache
+                  message: 'chore(gql cache): updates the cached blocks PE-1270'
