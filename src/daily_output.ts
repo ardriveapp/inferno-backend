@@ -1,55 +1,37 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import {
-	validateTxTip,
-	getLastTimestamp,
-	tiebreakerSortFactory,
 	ardriveOracle,
+	changeInPercentage,
 	daysDiffInEST,
-	weeksDiffInEST,
-	changeInPercentage
+	getLastTimestamp,
+	readInitialOutputFile,
+	tiebreakerSortFactory,
+	validateDataStructure,
+	validateTxTip,
+	weeksDiffInEST
 } from './common';
 import {
 	GROUP_EFFORT_REWARDS,
-	initialWalletStats,
-	UPLOAD_DATA_TIP_TYPE,
 	ONE_THOUSAND_MB,
 	OUTPUT_NAME,
-	OUTPUT_TEMPLATE_NAME
+	UPLOAD_DATA_TIP_TYPE,
+	initialWalletStats
 } from './constants';
 import { GQLEdgeInterface } from './gql_types';
-import { OutputData, StakedPSTHolders, WalletsStats, WalletStatEntry } from './inferno_types';
+import { StakedPSTHolders } from './inferno_types';
 
 /**
  * A class responsible of parsing the GQL and CommunityOracle data into the OutputData file
  */
 export class DailyOutput {
 	private readonly ardriveOracle = ardriveOracle;
-	private readonly previousData = this.read();
-	private data = this.read();
+	private readonly previousData = readInitialOutputFile();
+	private data = this.previousData;
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
 
 	constructor(private heightRange: [number, number]) {}
-
-	/**
-	 * Takes the data from the previously generated data, fallbacking to the base template if not present
-	 * @throws if the validation of the output file fails
-	 * @returns {OutputData}
-	 */
-	public read(): OutputData {
-		const data = (() => {
-			try {
-				return this.readOutputFile();
-			} catch (err) {
-				return this.readTemplate();
-			}
-		})();
-		if (!this.validateDataStructure(data)) {
-			throw new Error(`The output JSON has a wrong structure`);
-		}
-		return data;
-	}
 
 	/**
 	 * @param {StakedPSTHolders} stakedPSTHolders key/value of address/tokens above 200 ARDRIVE locked for at least 21600 blocks (~30 days)
@@ -410,78 +392,9 @@ export class DailyOutput {
 	 * @throws if the JSON data is invalid
 	 */
 	public write(): void {
-		if (!this.validateDataStructure(this.data)) {
+		if (!validateDataStructure(this.data)) {
 			throw new Error(`Cannot save invalid output: ${JSON.stringify(this.data)}`);
 		}
 		writeFileSync(OUTPUT_NAME, JSON.stringify(this.data));
-	}
-
-	/**
-	 * @returns the content of the JSON template file
-	 */
-	private readTemplate(): unknown {
-		const data = readFileSync(OUTPUT_TEMPLATE_NAME);
-		const dataAsString = data.toString();
-		return JSON.parse(dataAsString);
-	}
-
-	/**
-	 * @returns the content of the JSON output file
-	 */
-	public readOutputFile(): unknown {
-		const data = readFileSync(OUTPUT_NAME);
-		const dataAsString = data.toString();
-		return JSON.parse(dataAsString);
-	}
-
-	/**
-	 * Validates certain object to match the schema of the OutputData
-	 * @param data a JSON object
-	 * @returns true if the data is OutputData
-	 */
-	private validateDataStructure(data: unknown): data is OutputData {
-		const dataAsOutputData = data as OutputData;
-		return !!(
-			dataAsOutputData.lastUpdated &&
-			dataAsOutputData.PSTHolders &&
-			dataAsOutputData.blockHeight &&
-			dataAsOutputData.timestamp &&
-			this.validateWalletsStructure(dataAsOutputData.wallets) &&
-			dataAsOutputData.ranks &&
-			dataAsOutputData.ranks.daily &&
-			dataAsOutputData.ranks.weekly &&
-			dataAsOutputData.ranks.lastWeek &&
-			dataAsOutputData.ranks.total
-		);
-	}
-
-	private validateWalletsStructure(wallets: unknown): wallets is WalletsStats {
-		const walletsAsWalletsStats = wallets as WalletsStats;
-		const walletsInGoodShape =
-			walletsAsWalletsStats &&
-			Object.keys(walletsAsWalletsStats).reduce((isInGoodShape, address) => {
-				const walletData = walletsAsWalletsStats[address];
-				const currentWalletInGoodShape =
-					this.validateWalletStatStructure(walletData.daily) &&
-					this.validateWalletStatStructure(walletData.yesterday) &&
-					this.validateWalletStatStructure(walletData.weekly) &&
-					this.validateWalletStatStructure(walletData.lastWeek) &&
-					this.validateWalletStatStructure(walletData.total);
-				return isInGoodShape && currentWalletInGoodShape;
-			}, true);
-		return walletsInGoodShape;
-	}
-
-	private validateWalletStatStructure(data: unknown): data is WalletStatEntry {
-		const walletStat = data as WalletStatEntry;
-		return (
-			walletStat &&
-			Number.isInteger(walletStat.byteCount) &&
-			typeof walletStat.changeInPercentage === 'number' &&
-			!isNaN(walletStat.changeInPercentage) &&
-			Number.isInteger(walletStat.fileCount) &&
-			Number.isInteger(walletStat.rankPosition) &&
-			Number.isInteger(walletStat.tokensEarned)
-		);
 	}
 }
