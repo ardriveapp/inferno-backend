@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { normalize as normalizePath } from 'path';
 import Transaction from 'arweave/node/lib/transaction';
 import { arweave, readInitialOutputFile } from './common';
@@ -14,19 +14,14 @@ export type TransactionToDistribute = {
 };
 
 // Get the key file
-const keyfile = process.env.KEYFILE ? JSON.parse(process.env.KEYFILE) : undefined;
+const keyfile = process.env.KEYFILE ? parseKeyFile(process.env.KEYFILE) : undefined;
 
 export async function distributeTokens(confirm: boolean) {
 	const data = readInitialOutputFile();
-	const weeklyRank = data.ranks.weekly;
+	const lastWeekRank = data.ranks.lastWeek;
 
 	if (!keyfile) {
 		throw new Error("There's no keyfile to create transactions with");
-	}
-
-	if (!weeklyRank.hasReachedMinimumGroupEffort) {
-		console.log("The group didn't reach the minimum effort this week");
-		return;
 	}
 
 	if (confirm) {
@@ -35,7 +30,7 @@ export async function distributeTokens(confirm: boolean) {
 		console.log('DRY-RUN: THE SCRIPT IS NOT POSTING TRANSACTIONS');
 	}
 
-	const addresses = weeklyRank.groupEffortRewards.filter((wallet) => wallet.rewards > 0);
+	const addresses = lastWeekRank.groupEffortRewards.filter((wallet) => wallet.rewards > 0);
 	const transactions = await createTokenDistributionTransactions(addresses);
 
 	if (confirm) {
@@ -129,5 +124,14 @@ export async function sendTokenDistributionTransaction(transaction: TransactionT
 	} catch (err) {
 		console.log(`ERROR posting transaction ${tx.id}`, err);
 		return false;
+	}
+}
+
+function parseKeyFile(keyfile: string) {
+	try {
+		return JSON.parse(readFileSync(keyfile).toString());
+	} catch (err) {
+		const message = (err instanceof Error && err.message) || JSON.stringify(err);
+		throw new Error(message);
 	}
 }

@@ -6,7 +6,7 @@ The backend of the Inferno Rewards project. It's intended to determine the award
 
 Install dependencies
 
- - [nvm](https://github.com/nvm-sh/nvm/blob/master/README.md)
+-   [nvm](https://github.com/nvm-sh/nvm/blob/master/README.md)
 
 Then run:
 
@@ -29,12 +29,15 @@ You can call the built in script by running:
 ```sh
 $ yarn node ./lib/index.js aggregate
 ```
+
 to aggregate data since the previously aggregated block (specified at `./daily_output.json`, defaults to the height specified at `./daily_output.base.json` if not present) until the current height.
 
 Or you can specify a custom height range by passing them as positional arguments:
+
 ```sh
 $ yarn node ./lib/index.js aggregate <minBlock> <maxBlock>
 ```
+
 You will simply have to ensure that the `minBlock` is greater or equal than the previously aggregated block.
 
 ### Output file
@@ -42,6 +45,7 @@ You will simply have to ensure that the `minBlock` is greater or equal than the 
 The `daily_output.json` is what the Leaderboard takes as source of data, and is written each time the aggregation process suceeds running. It is updated by the ArDrive team at the public file with ID: `7fa5d4e3-0087-422a-acb3-2e481d98d08b`.
 
 You can check for the file info by doing:
+
 ```sh
 $ ardrive file-info -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 {
@@ -63,30 +67,64 @@ $ ardrive file-info -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
     "fileId": "7fa5d4e3-0087-422a-acb3-2e481d98d08b"
 }
 ```
+
 or download the file:
+
 ```sh
 ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 ```
 
 The basic JSON schema:
+
 ```ts
 interface OutputData {
-	// The timestamp for when the data aggregation has run
-	lastUpdated: number;
+    // The timestamp for when the data aggregation has run
+    lastUpdated: number;
 
-	// The last block height read
-	blockHeight: number;
+    // The last block height read
+    blockHeight: number;
 
-	// The last block's timestamp read
-	timestamp: number;
+    // The last block's timestamp read
+    timestamp: number;
 
-	// PST Holders' staked tokens
-	PSTHolders: StakedPSTHolders;
+    // PST Holders' staked tokens
+    PSTHolders: StakedPSTHolders;
 
-	// Per wallet stats
-	wallets: WalletsStats;
+    // Per wallet stats
+    wallets: WalletsStats;
 
-	ranks: Ranks;
+    ranks: Ranks;
 }
 ```
+
 For more information about the file schema please see: `./src/inferno_types.ts`.
+
+## Rewards distribution
+
+You can use ´distribute´ command to automatically create and post transactions for each wallet that won a rewards.
+The script checks last week rank and rewards and it should be ran after the reward cycle ends.
+By default the script runs in dry mode only creating and printing the created transactions in the terminal. To be able to send you need to add a `--confirm` flag. Is recommended to first run the script in dry run mode to manually check the output and only after run with `--confirm` flag to create and post the transactions.
+
+First you need to download the latest version of the rank, running on the root folder of this project:
+
+```sh
+$ ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
+```
+
+After that you need to identify which wallet will sign and post the transactions. For that you will need to call the script with a environment variable called ´KEYFILE´.
+
+```sh
+$ export KEYFILE=path/to/a/json/keyfile
+```
+
+Providing both dependencies it's time to run the `distribute` command:
+
+```sh
+$ yarn node ./lib/index.js distribute
+```
+
+After a careful manual check you can finally run:
+
+```sh
+$ yarn node ./lib/index.js distribute --confirm
+```
