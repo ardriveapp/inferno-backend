@@ -11,8 +11,9 @@ import {
 	weeksDiffInEST
 } from './common';
 import {
-	GROUP_EFFORT_REWARDS,
-	ONE_THOUSAND_MB,
+	GROUP_EFFORT_REWARDS_FULL,
+	GROUP_EFFORT_REWARDS_HALF,
+	ONE_HUNDRED_MB,
 	OUTPUT_NAME,
 	UPLOAD_DATA_TIP_TYPE,
 	initialWalletStats
@@ -26,7 +27,7 @@ import { StakedPSTHolders } from './inferno_types';
 export class DailyOutput {
 	private readonly ardriveOracle = ardriveOracle;
 	private readonly previousData = readInitialOutputFile();
-	private data = this.previousData;
+	private data = readInitialOutputFile();
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
@@ -117,12 +118,9 @@ export class DailyOutput {
 		const addresses = Object.keys(this.data.wallets);
 		// check if the minimum group effort was reached
 		const groupEffortParticipants: string[] = [];
-		const otherParticipants: string[] = [];
 		addresses.forEach((address) => {
-			if (this.data.wallets[address].weekly.byteCount >= ONE_THOUSAND_MB) {
+			if (this.data.wallets[address].weekly.byteCount >= ONE_HUNDRED_MB) {
 				groupEffortParticipants.push(address);
-			} else {
-				otherParticipants.push(address);
 			}
 		});
 
@@ -137,7 +135,13 @@ export class DailyOutput {
 			.map((address, index) => {
 				const rankPosition = index + 1;
 				const isInTop50 = rankPosition <= 50;
-				const rewards = hasReachedMinimumGroupEffort && isInTop50 ? GROUP_EFFORT_REWARDS[index] : 0;
+				let rewards;
+				if (hasReachedMinimumGroupEffort) {
+					rewards = isInTop50 ? GROUP_EFFORT_REWARDS_FULL[index] : 0;
+				} else {
+					const byteCount = this.data.wallets[address].weekly.byteCount;
+					rewards = byteCount >= ONE_HUNDRED_MB ? GROUP_EFFORT_REWARDS_HALF[index] : 0;
+				}
 				return { address, rewards, rankPosition };
 			});
 	}
@@ -333,7 +337,7 @@ export class DailyOutput {
 
 	private isParticipatingInGroupEffort(address: string): boolean {
 		const currentByteCount = this.data.wallets[address].weekly.byteCount;
-		return currentByteCount >= ONE_THOUSAND_MB;
+		return currentByteCount >= ONE_HUNDRED_MB;
 	}
 
 	/**
