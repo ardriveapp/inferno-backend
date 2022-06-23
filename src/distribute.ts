@@ -1,9 +1,10 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { normalize as normalizePath } from 'path';
 import Transaction from 'arweave/node/lib/transaction';
-import { arweave, readInitialOutputFile } from './common';
+import { arweave } from './common';
 import { communityTxId } from './community/ardrive_contract_oracle';
 import type { Rewards } from './inferno_types';
+import { downloadOutputFile } from './utils/download_output';
 
 export type TransactionToDistribute = {
 	id: string;
@@ -17,7 +18,9 @@ export type TransactionToDistribute = {
 const keyfile = process.env.KEYFILE ? parseKeyFile(process.env.KEYFILE) : undefined;
 
 export async function distributeTokens(confirm: boolean) {
-	const data = readInitialOutputFile();
+	console.log('========= DOWNLOADING RANK =========');
+
+	const data = await downloadOutputFile();
 	const lastWeekRank = data.ranks.lastWeek;
 
 	if (!keyfile) {
@@ -31,6 +34,12 @@ export async function distributeTokens(confirm: boolean) {
 	}
 
 	const addresses = lastWeekRank.groupEffortRewards.filter((wallet) => wallet.rewards > 0);
+
+	if (addresses.length === 0) {
+		console.log('No wallets have reached the miminum effort to win rewards');
+		return;
+	}
+
 	const transactions = await createTokenDistributionTransactions(addresses);
 
 	if (confirm) {
