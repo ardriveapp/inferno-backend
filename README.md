@@ -101,23 +101,17 @@ For more information about the file schema please see: `./src/inferno_types.ts`.
 
 ## Rewards distribution
 
-You can use ´distribute´ command to automatically create and post transactions for each wallet that won a rewards.
-The script checks last week rank and rewards and it should be ran after the reward cycle ends.
-By default the script runs in dry mode only creating and printing the created transactions in the terminal. To be able to send you need to add a `--confirm` flag. Is recommended to first run the script in dry run mode to manually check the output and only after run with `--confirm` flag to create and post the transactions.
+You can use ´distribute´ command to automatically create and post transactions for each wallet that won a reward.
+The script checks last week rank rewards and should be ran after the reward cycle ends.
+By default the script runs in dry mode creating and printing the created transactions in the terminal. To be able to send these transactions you need to add a `--confirm` flag. It's recommended to first run the script in dry run mode to manually check the output and only after run with `--confirm` flag to post the transactions.
 
-First you need to download the latest version of the rank, running on the root folder of this project:
-
-```sh
-$ ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
-```
-
-After that you need to identify which wallet will sign and post the transactions. For that you will need to call the script with a environment variable called ´KEYFILE´.
+First you need to identify the path to the keyfile that will sign and post the transactions. For that you will need to call the script with a environment variable called ´KEYFILE´.
 
 ```sh
 $ export KEYFILE=path/to/a/json/keyfile
 ```
 
-Providing both dependencies it's time to run the `distribute` command:
+Providing the keyfile it's time to run the `distribute` command:
 
 ```sh
 $ yarn node ./lib/index.js distribute

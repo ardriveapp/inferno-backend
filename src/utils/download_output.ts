@@ -50,7 +50,7 @@ async function sendGQLQuery(): Promise<GQLResponseType> {
 	return response.json();
 }
 
-function getMetadataTx(gqlResponse: GQLResponseType): string {
+function getMetadataTxId(gqlResponse: GQLResponseType): string {
 	const responseData = gqlResponse.data.transactions.edges[0].node;
 	return responseData.id;
 }
@@ -68,7 +68,7 @@ async function getData(dataTxId: string): Promise<OutputData> {
 
 export async function downloadOutputFile() {
 	const gqlResponse = await sendGQLQuery();
-	const metadataTxId = getMetadataTx(gqlResponse);
+	const metadataTxId = getMetadataTxId(gqlResponse);
 
 	const dataTxId = await getDataTxId(metadataTxId);
 	const data = await getData(dataTxId);
