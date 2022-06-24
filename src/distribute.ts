@@ -46,7 +46,7 @@ export async function distributeTokens(confirm: boolean) {
 		console.log('========= SENDING TRANSACTIONS =========');
 	}
 
-	const transactionsToReport: { id: string; qty: number; rankPosition: number }[] = [];
+	const transactionsToReport: { id: string; qty: number; rankPosition: number; target: string }[] = [];
 
 	for (const transaction of transactions) {
 		if (!confirm) {
@@ -60,7 +60,8 @@ export async function distributeTokens(confirm: boolean) {
 			transactionsToReport.push({
 				id: transaction.id,
 				qty: transaction.qty,
-				rankPosition: transaction.rankPosition
+				rankPosition: transaction.rankPosition,
+				target: transaction.target
 			});
 		}
 	}
