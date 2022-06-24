@@ -1,9 +1,10 @@
-import { writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { normalize as normalizePath } from 'path';
 import Transaction from 'arweave/node/lib/transaction';
-import { arweave, readInitialOutputFile } from './common';
+import { arweave } from './common';
 import { communityTxId } from './community/ardrive_contract_oracle';
 import type { Rewards } from './inferno_types';
+import { downloadOutputFile } from './utils/download_output';
 
 export type TransactionToDistribute = {
 	id: string;
@@ -14,19 +15,16 @@ export type TransactionToDistribute = {
 };
 
 // Get the key file
-const keyfile = process.env.KEYFILE ? JSON.parse(process.env.KEYFILE) : undefined;
+const keyfile = process.env.KEYFILE ? parseKeyFile(process.env.KEYFILE) : undefined;
 
 export async function distributeTokens(confirm: boolean) {
-	const data = readInitialOutputFile();
-	const weeklyRank = data.ranks.weekly;
+	console.log('========= DOWNLOADING RANK =========');
+
+	const data = await downloadOutputFile();
+	const lastWeekRank = data.ranks.lastWeek;
 
 	if (!keyfile) {
 		throw new Error("There's no keyfile to create transactions with");
-	}
-
-	if (!weeklyRank.hasReachedMinimumGroupEffort) {
-		console.log("The group didn't reach the minimum effort this week");
-		return;
 	}
 
 	if (confirm) {
@@ -35,14 +33,20 @@ export async function distributeTokens(confirm: boolean) {
 		console.log('DRY-RUN: THE SCRIPT IS NOT POSTING TRANSACTIONS');
 	}
 
-	const addresses = weeklyRank.groupEffortRewards.filter((wallet) => wallet.rewards > 0);
+	const addresses = lastWeekRank.groupEffortRewards.filter((wallet) => wallet.rewards > 0);
+
+	if (addresses.length === 0) {
+		console.log('No wallets have reached the miminum effort to win rewards');
+		return;
+	}
+
 	const transactions = await createTokenDistributionTransactions(addresses);
 
 	if (confirm) {
 		console.log('========= SENDING TRANSACTIONS =========');
 	}
 
-	const transactionsToReport: { id: string; qty: number; rankPosition: number }[] = [];
+	const transactionsToReport: { id: string; qty: number; rankPosition: number; target: string }[] = [];
 
 	for (const transaction of transactions) {
 		if (!confirm) {
@@ -56,7 +60,8 @@ export async function distributeTokens(confirm: boolean) {
 			transactionsToReport.push({
 				id: transaction.id,
 				qty: transaction.qty,
-				rankPosition: transaction.rankPosition
+				rankPosition: transaction.rankPosition,
+				target: transaction.target
 			});
 		}
 	}
@@ -129,5 +134,14 @@ export async function sendTokenDistributionTransaction(transaction: TransactionT
 	} catch (err) {
 		console.log(`ERROR posting transaction ${tx.id}`, err);
 		return false;
+	}
+}
+
+function parseKeyFile(keyfile: string) {
+	try {
+		return JSON.parse(readFileSync(keyfile).toString());
+	} catch (err) {
+		const message = (err instanceof Error && err.message) || JSON.stringify(err);
+		throw new Error(message);
 	}
 }

@@ -5,7 +5,7 @@ import { SmartweaveContractReader } from './community/smartweave_contract_oracle
 import { OUTPUT_TEMPLATE_NAME, OUTPUT_NAME, BOOST_TAG, APP_NAME_TAG, APP_VERSION_TAG, WEB_APP_NAME } from './constants';
 import { WalletsStats, WalletStatEntry } from './inferno_types';
 import Arweave from 'arweave';
-import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './utils/constants';
+import { defaultGatewayHost, defaultGatewayPort, defaultGatewayProtocol } from './constants';
 import { GQLNodeInterface, GQLEdgeInterface } from './gql_types';
 import { OutputData } from './inferno_types';
 
