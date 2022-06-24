@@ -1,4 +1,6 @@
+import { copyFileSync, existsSync, rmSync, writeFileSync } from 'fs';
 import { expect } from 'chai';
+import { stub } from 'sinon';
 import {
 	calculateTipPercentage,
 	changeInPercentage,
@@ -7,11 +9,15 @@ import {
 	dateToUTC,
 	daysDiffInEST,
 	isSemanticVersionGreaterThan,
+	readInitialOutputFile,
+	readOutputFile,
+	readOutputTemplateFile,
 	validateTxTip,
 	weeksDiffInEST
 } from './common';
-import { stub } from 'sinon';
 import { mockAddressRecipient, mockHeight, stubArdriveOracle, stubTxNode } from '../tests/stubs';
+import { OUTPUT_NAME, OUTPUT_TEMPLATE_NAME } from './constants';
+import { OutputData } from './inferno_types';
 
 describe('common methods', () => {
 	describe('calculateTipPercentage function', () => {
@@ -73,6 +79,7 @@ describe('common methods', () => {
 	const sameDay = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 1000)];
 	const differentDay = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 2 * aDayInMilliseconds)];
 	const differentWeek = [new Date(mockDateTimestamp), new Date(mockDateTimestamp + 2 * aWeekInMilliseconds)];
+
 	describe('daysDiffInEST function', () => {
 		it('return 0 when both dates are in the same EST day', () => {
 			const [prev, curr] = sameDay;
@@ -197,6 +204,200 @@ describe('common methods', () => {
 
 		it('returns 2 if the previous is 50 and the current is 150', () => {
 			expect(changeInPercentage(50, 150)).to.equal(2);
+		});
+	});
+
+	// this JSON is different than the base template
+	const mockDailyOutput: OutputData = {
+		lastUpdated: 914200,
+		blockHeight: 914200,
+		timestamp: 1650043449000,
+		PSTHolders: {},
+		wallets: {},
+		ranks: {
+			daily: {
+				hasReachedMinimumGroupEffort: false,
+				groupEffortRewards: [],
+				streakRewards: []
+			},
+			weekly: {
+				hasReachedMinimumGroupEffort: false,
+				groupEffortRewards: [],
+				streakRewards: []
+			},
+			lastWeek: {
+				hasReachedMinimumGroupEffort: false,
+				groupEffortRewards: [],
+				streakRewards: []
+			},
+			total: {
+				groupEffortRewards: [],
+				streakRewards: []
+			}
+		}
+	};
+
+	// The above JSON stringified with tabs and a trailing new line
+	const mockStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(mockDailyOutput, null, '\t')} \n`;
+
+	// a valid JSON with missing mandatory fields
+	const mockMalformedDailyOutput = {
+		lastUpdated: 914200,
+		blockHeight: 914200,
+		timestamp: 1650043449000,
+		PSTHolders: {},
+		// wallets: {},
+		ranks: {
+			daily: {
+				hasReachedMinimumGroupEffort: false,
+				groupEffortRewards: [],
+				streakRewards: []
+			},
+			weekly: {
+				hasReachedMinimumGroupEffort: false,
+				groupEffortRewards: [],
+				streakRewards: []
+			},
+			lastWeek: {
+				hasReachedMinimumGroupEffort: false,
+				groupEffortRewards: [],
+				streakRewards: []
+			}
+			// total: {
+			// 	groupEffortRewards: [],
+			// 	streakRewards: []
+			// }
+		}
+	};
+
+	// The above JSON stringified with tabs and a trailing new line
+	const mockMalformedStringifyWithTabsAndTrailingNewLine = `${JSON.stringify(
+		mockMalformedDailyOutput,
+		null,
+		'\t'
+	)} \n`;
+
+	describe('readOutputFile', () => {
+		before(() => {
+			if (existsSync(OUTPUT_NAME)) {
+				rmSync(OUTPUT_NAME);
+			}
+		});
+
+		after(() => {
+			if (existsSync(OUTPUT_NAME)) {
+				rmSync(OUTPUT_NAME);
+			}
+		});
+
+		it('return the template if the file is not present', () => {
+			expect(readOutputFile).to.throw();
+		});
+
+		it('return the actual file if present', () => {
+			writeFileSync(OUTPUT_NAME, mockStringifyWithTabsAndTrailingNewLine);
+			expect(readOutputFile()).to.deep.equal(mockDailyOutput);
+		});
+
+		it('throws if the file has missing fields', () => {
+			writeFileSync(OUTPUT_NAME, mockMalformedStringifyWithTabsAndTrailingNewLine);
+			expect(readOutputFile).to.throw();
+		});
+
+		it('throws if the file is a corrupted JSON', () => {
+			writeFileSync(OUTPUT_NAME, '!{{ NOT A VALID JSON "": false');
+			expect(readOutputFile).to.throw();
+		});
+	});
+
+	describe('readOutputTemplateFile', () => {
+		const OUTPUT_TEMPLATE_NAME_BACKUP = `${OUTPUT_TEMPLATE_NAME}.bak`;
+
+		before(() => {
+			if (existsSync(OUTPUT_TEMPLATE_NAME)) {
+				copyFileSync(OUTPUT_TEMPLATE_NAME, OUTPUT_TEMPLATE_NAME_BACKUP);
+				rmSync(OUTPUT_TEMPLATE_NAME);
+			}
+		});
+
+		after(() => {
+			if (existsSync(OUTPUT_TEMPLATE_NAME)) {
+				rmSync(OUTPUT_TEMPLATE_NAME);
+			}
+
+			copyFileSync(OUTPUT_TEMPLATE_NAME_BACKUP, OUTPUT_TEMPLATE_NAME);
+			if (existsSync(OUTPUT_TEMPLATE_NAME_BACKUP)) {
+				rmSync(OUTPUT_TEMPLATE_NAME_BACKUP);
+			}
+		});
+
+		it('return the template if the file is not present', () => {
+			expect(readOutputTemplateFile).to.throw();
+		});
+
+		it('return the actual file if present', () => {
+			writeFileSync(OUTPUT_TEMPLATE_NAME, mockStringifyWithTabsAndTrailingNewLine);
+			expect(readOutputTemplateFile()).to.deep.equal(mockDailyOutput);
+		});
+
+		it('throws if the file has missing fields', () => {
+			writeFileSync(OUTPUT_TEMPLATE_NAME, mockMalformedStringifyWithTabsAndTrailingNewLine);
+			expect(readOutputTemplateFile).to.throw();
+		});
+
+		it('throws if the file is a corrupted JSON', () => {
+			writeFileSync(OUTPUT_TEMPLATE_NAME, '!{{ NOT A VALID JSON "": false');
+			expect(readOutputTemplateFile).to.throw();
+		});
+	});
+
+	describe('readInitialOutputFile', () => {
+		before(() => {
+			if (existsSync(OUTPUT_NAME)) {
+				rmSync(OUTPUT_NAME);
+			}
+		});
+
+		after(() => {
+			if (existsSync(OUTPUT_NAME)) {
+				rmSync(OUTPUT_NAME);
+			}
+		});
+
+		it('return the actual file if present', () => {
+			writeFileSync(OUTPUT_NAME, mockStringifyWithTabsAndTrailingNewLine);
+			expect(readInitialOutputFile()).to.deep.equal(mockDailyOutput);
+		});
+
+		it('return the template file if output is not present', () => {
+			const OUTPUT_TEMPLATE_NAME_BACKUP = `${OUTPUT_TEMPLATE_NAME}.bak`;
+
+			// create template backup
+			if (existsSync(OUTPUT_TEMPLATE_NAME)) {
+				copyFileSync(OUTPUT_TEMPLATE_NAME, OUTPUT_TEMPLATE_NAME_BACKUP);
+				rmSync(OUTPUT_TEMPLATE_NAME);
+			}
+
+			// write template mock
+			writeFileSync(OUTPUT_TEMPLATE_NAME, mockStringifyWithTabsAndTrailingNewLine);
+
+			expect(readInitialOutputFile()).to.deep.equal(mockDailyOutput);
+
+			// restore template backup and delete backup file
+			copyFileSync(OUTPUT_TEMPLATE_NAME_BACKUP, OUTPUT_TEMPLATE_NAME);
+			if (existsSync(OUTPUT_TEMPLATE_NAME_BACKUP)) {
+				rmSync(OUTPUT_TEMPLATE_NAME_BACKUP);
+			}
+		});
+
+		it('throws if the file has missing fields', () => {
+			writeFileSync(OUTPUT_NAME, mockMalformedStringifyWithTabsAndTrailingNewLine);
+			expect(readInitialOutputFile).to.throw();
+		});
+
+		it('throws if the file is a corrupted JSON', () => {
+			writeFileSync(OUTPUT_NAME, '!{{ NOT A VALID JSON "": false');
+			expect(readInitialOutputFile).to.throw();
 		});
 	});
 });
