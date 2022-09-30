@@ -343,15 +343,16 @@ export class DailyOutput {
 	};
 
 	private doublesData(txDate: Date, appName?: string, appPlatform?: string): boolean {
-		const MOBILE_x2_START_DATE = new Date('10/30/2022');
-		const MOBILE_x2_END_DATE = new Date('11/27/2022');
+		const MOBILE_x2_START_DATE = new Date('10/30/2022'); // Oct 30th, 2022
+		const MOBILE_x2_END_DATE = new Date('11/27/2022'); // Nov 27th, 2022
 		const daysDiffToStart = daysDiffInEST(txDate, MOBILE_x2_START_DATE);
 		const daysDiffToEnd = daysDiffInEST(txDate, MOBILE_x2_END_DATE);
 		const doublingAlreadyStarted = daysDiffToStart === 0;
 		const doublingDidntFinish = daysDiffToEnd <= 7 * 4;
 		const doublingRewards = doublingAlreadyStarted && doublingDidntFinish;
+
 		if (!doublingRewards) {
-			// the x2Mobile didn't start yet, or has already finished
+			// the x2Mobile didn't start yet, or it has already finished
 			return false;
 		}
 
