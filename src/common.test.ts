@@ -86,6 +86,11 @@ describe('common methods', () => {
 			expect(daysDiffInEST(prev, curr)).to.equal(0);
 		});
 
+		it('return 0 when prev is after curr EST day', () => {
+			const [prev, curr] = differentDay;
+			expect(daysDiffInEST(curr, prev)).to.equal(0);
+		});
+
 		it('return 2 when the dates have two days of difference in EST time', () => {
 			const [prev, curr] = differentDay;
 			expect(daysDiffInEST(prev, curr)).to.equal(2);

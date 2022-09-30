@@ -16,7 +16,8 @@ import {
 	ONE_HUNDRED_MB,
 	OUTPUT_NAME,
 	UPLOAD_DATA_TIP_TYPE,
-	initialWalletStats
+	initialWalletStats,
+	FLUTTER_APP_NAME
 } from './constants';
 import { GQLEdgeInterface } from './gql_types';
 import { StakedPSTHolders } from './inferno_types';
@@ -261,9 +262,15 @@ export class DailyOutput {
 		const bundledIn = node.bundledIn?.id;
 		const isV2DataTx = !isMetadataTransaction && !isBundleTransaction && !bundledIn;
 
+		const queryTimestamp = edge.node.block.timestamp * 1000;
+		const queryDate = new Date(queryTimestamp);
+
+		// x2 data count for Mobile
+		const appName = tags.find((tag) => tag.name === 'App-Name')?.value;
+		const appPlatform = tags.find((tag) => tag.name === 'App-Platform')?.value;
+		const dataSizeDoubledForMobile = this.doublesData(queryDate, appName, appPlatform) ? dataSize * 2 : dataSize;
+
 		if (fee && isTipValid && (isV2DataTx || isBundleTransaction)) {
-			const queryTimestamp = edge.node.block.timestamp * 1000;
-			const queryDate = new Date(queryTimestamp);
 			const previousTimestamp = this.latestTimestamp * 1000;
 			const previousDate = new Date(previousTimestamp);
 
@@ -296,8 +303,8 @@ export class DailyOutput {
 		} else if (isBundleTransaction && isTipValid && tip) {
 			const bundleTipType = tags.find((tag) => tag.name === 'Tip-Type')?.value;
 			if (bundleTipType === UPLOAD_DATA_TIP_TYPE) {
-				this.bundlesTips[txId] = { tip, size: dataSize, address: ownerAddress };
-				this.sumSize(ownerAddress, dataSize);
+				this.bundlesTips[txId] = { tip, size: dataSizeDoubledForMobile, address: ownerAddress };
+				this.sumSize(ownerAddress, dataSizeDoubledForMobile);
 				this.sumTip(ownerAddress, tip);
 
 				// Set the block height once the minimum amount of data to participate is reached
@@ -321,7 +328,7 @@ export class DailyOutput {
 			}
 
 			// it is a V2 transaction with a tip
-			this.sumSize(ownerAddress, dataSize);
+			this.sumSize(ownerAddress, dataSizeDoubledForMobile);
 			this.sumTip(ownerAddress, tip);
 
 			// Set the block height once the minimum amount of data to participate is reached
@@ -334,6 +341,25 @@ export class DailyOutput {
 		}
 		this.data.blockHeight = currentHeight;
 	};
+
+	private doublesData(txDate: Date, appName?: string, appPlatform?: string): boolean {
+		const MOBILE_x2_START_DATE = new Date('10/30/2022');
+		const MOBILE_x2_END_DATE = new Date('11/27/2022');
+		const daysDiffToStart = daysDiffInEST(txDate, MOBILE_x2_START_DATE);
+		const daysDiffToEnd = daysDiffInEST(txDate, MOBILE_x2_END_DATE);
+		const doublingAlreadyStarted = daysDiffToStart === 0;
+		const doublingDidntFinish = daysDiffToEnd <= 7 * 4;
+		const doublingRewards = doublingAlreadyStarted && doublingDidntFinish;
+		if (!doublingRewards) {
+			// the x2Mobile didn't start yet, or has already finished
+			return false;
+		}
+
+		const isFlutterApp = appName === FLUTTER_APP_NAME;
+		const isAndroid = appPlatform === 'Android';
+		const isIos = appPlatform === 'iOS';
+		return isFlutterApp && (isAndroid || isIos);
+	}
 
 	private isParticipatingInGroupEffort(address: string): boolean {
 		const currentByteCount = this.data.wallets[address].weekly.byteCount;

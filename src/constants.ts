@@ -8,9 +8,8 @@ export const GROUP_EFFORT_REWARDS_FULL = [
 	75, 55, 50, 47, 45, 43, 40, 37, 35, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13,
 	12, 11, 10, 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1
 ] as const;
-export const GROUP_EFFORT_REWARDS_HALF = GROUP_EFFORT_REWARDS_FULL.map(reward => Math.ceil(reward / 2));
+export const GROUP_EFFORT_REWARDS_HALF = GROUP_EFFORT_REWARDS_FULL.map((reward) => Math.ceil(reward / 2));
 export const ITEMS_PER_REQUEST = 100;
-export const VALID_APP_NAMES = ['ArDrive-Web', 'ArDrive-CLI', 'ArDrive-Sync', 'ArDrive-Core'];
 export const BLOCKS_PER_MONTH = 21600;
 export const MAX_RETRIES = 10;
 export const TIMEOUT = 40000;
@@ -29,6 +28,11 @@ export const APP_NAME_TAG = 'App-Name';
 export const BOOST_TAG = 'Boost';
 export const APP_VERSION_TAG = 'App-Version';
 export const WEB_APP_NAME = 'ArDrive-Web';
+export const FLUTTER_APP_NAME = 'ArDrive-Flutter';
+export const CLI_APP_NAME = 'ArDrive-CLI';
+export const SYNC_APP_NAME = 'ArDrive-Sync';
+export const CORE_APP_NAME = 'ArDrive-Core';
+export const VALID_APP_NAMES = [WEB_APP_NAME, FLUTTER_APP_NAME, CLI_APP_NAME, SYNC_APP_NAME, CORE_APP_NAME];
 export const WINSTON_AR_ASPECT = 1_000_000_000_000;
 
 export const defaultGatewayHost = 'arweave.net';
