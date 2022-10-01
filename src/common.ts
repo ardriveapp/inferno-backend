@@ -243,6 +243,28 @@ export function isSemanticVersionGreaterThan(appVersion_a: string, appVersion_b:
 	return false;
 }
 
+/**
+ * Returns true if the date is after the day_start and before the day_end
+ * @param day_start the day when the range starts
+ * @param day_end the day when the range ends (not included)
+ * @param date the date to check
+ */
+export function isDateInRangeOfDays(day_start: Date, day_end: Date, date: Date): boolean {
+	// take the amount of days in the given range
+	const totalAmountOfDaysInRange = daysDiffInEST(day_start, day_end);
+
+	// how many days are missing to reach the start? (zero if already happened)
+	const pendingDaysToStart = daysDiffInEST(date, day_start);
+	// how many days are missing to reach the end? (zero if already happened)
+	const pendingsDaysToEnd = daysDiffInEST(date, day_end);
+
+	const isDateAfterStart = pendingDaysToStart === 0;
+	const isDateBeforeEnd = pendingsDaysToEnd <= totalAmountOfDaysInRange && pendingsDaysToEnd !== 0;
+	const isDateInRange = isDateAfterStart && isDateBeforeEnd;
+
+	return isDateInRange;
+}
+
 export function daysDiffInEST(prev: Date, curr: Date): number {
 	const prevEstDate = dateToEST(prev);
 	const currEstDate = dateToEST(curr);

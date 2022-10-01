@@ -4,6 +4,7 @@ import {
 	changeInPercentage,
 	daysDiffInEST,
 	getLastTimestamp,
+	isDateInRangeOfDays,
 	readInitialOutputFile,
 	tiebreakerSortFactory,
 	validateDataStructure,
@@ -345,11 +346,11 @@ export class DailyOutput {
 	private doublesData(txDate: Date, appName?: string, appPlatform?: string): boolean {
 		const MOBILE_x2_START_DATE = new Date('10/30/2022'); // Oct 30th, 2022
 		const MOBILE_x2_END_DATE = new Date('11/27/2022'); // Nov 27th, 2022
-		const daysDiffToStart = daysDiffInEST(txDate, MOBILE_x2_START_DATE);
-		const daysDiffToEnd = daysDiffInEST(txDate, MOBILE_x2_END_DATE);
-		const doublingAlreadyStarted = daysDiffToStart === 0;
-		const doublingDidntFinish = daysDiffToEnd <= 7 * 4;
-		const doublingRewards = doublingAlreadyStarted && doublingDidntFinish;
+
+		// set it to the day after because isDateInRangeOfDSays expects the end to be exluded from the range
+		MOBILE_x2_END_DATE.setTime(MOBILE_x2_END_DATE.getTime() + 1000 * 60 * 60 * 24);
+
+		const doublingRewards = isDateInRangeOfDays(MOBILE_x2_START_DATE, MOBILE_x2_END_DATE, txDate);
 
 		if (!doublingRewards) {
 			// the x2Mobile didn't start yet, or it has already finished
