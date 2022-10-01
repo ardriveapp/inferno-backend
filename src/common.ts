@@ -248,11 +248,7 @@ export function daysDiffInEST(prev: Date, curr: Date): number {
 	const currEstDate = dateToEST(curr);
 
 	let daysCount = 0;
-	const cursorDate = new Date(prevEstDate.getTime());
-	cursorDate.setHours(0);
-	cursorDate.setMinutes(0);
-	cursorDate.setSeconds(0);
-	cursorDate.setMilliseconds(0);
+	const cursorDate = begginingOfDayOfDate(prevEstDate);
 
 	while (currEstDate.getTime() > cursorDate.getTime()) {
 		const cursorDay = cursorDate.getDate();
@@ -294,12 +290,8 @@ export function weeksDiffInEST(prev: Date, curr: Date): number {
 
 export function dateToSunday(date: Date) {
 	const dayOfWeek = date.getDay();
-	const newDate = new Date(date.getTime());
+	const newDate = begginingOfDayOfDate(date);
 	newDate.setDate(newDate.getDate() - dayOfWeek);
-	newDate.setHours(0);
-	newDate.setMinutes(0);
-	newDate.setSeconds(0);
-	newDate.setMilliseconds(0);
 	return newDate;
 }
 
@@ -315,6 +307,19 @@ export function dateToUTC(d: Date): Date {
 	const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
 	date.setMinutes(date.getMinutes() + offset); // date now in UTC time
 	return date;
+}
+
+export function begginingOfDayOfDate(date: Date): Date {
+	// clone the date
+	const begginingOfDay = new Date(date.getTime());
+
+	// set all units below DAY to zero
+	begginingOfDay.setHours(0);
+	begginingOfDay.setMinutes(0);
+	begginingOfDay.setSeconds(0);
+	begginingOfDay.setMilliseconds(0);
+
+	return begginingOfDay;
 }
 
 export function heightAscSortFunction(edge_a: GQLEdgeInterface, edge_b: GQLEdgeInterface): number {
