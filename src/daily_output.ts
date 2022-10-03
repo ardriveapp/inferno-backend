@@ -347,9 +347,6 @@ export class DailyOutput {
 		const MOBILE_x2_START_DATE = new Date('10/30/2022'); // Oct 30th, 2022
 		const MOBILE_x2_END_DATE = new Date('11/27/2022'); // Nov 27th, 2022
 
-		// set it to the day after because isDateInRangeOfDSays expects the end to be exluded from the range
-		MOBILE_x2_END_DATE.setTime(MOBILE_x2_END_DATE.getTime() + 1000 * 60 * 60 * 24);
-
 		const doublingRewards = isDateInRangeOfDays(MOBILE_x2_START_DATE, MOBILE_x2_END_DATE, txDate);
 
 		if (!doublingRewards) {
