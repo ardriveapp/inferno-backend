@@ -8,6 +8,7 @@ import {
 	dateToSunday,
 	dateToUTC,
 	daysDiffInEST,
+	isDateInRangeOfDays,
 	isSemanticVersionGreaterThan,
 	readInitialOutputFile,
 	readOutputFile,
@@ -403,6 +404,36 @@ describe('common methods', () => {
 		it('throws if the file is a corrupted JSON', () => {
 			writeFileSync(OUTPUT_NAME, '!{{ NOT A VALID JSON "": false');
 			expect(readInitialOutputFile).to.throw();
+		});
+	});
+
+	describe('isDateInRangeOfDays method', () => {
+		// Format: MM/DD/YYYY
+		const RANGE_START = new Date('05/01/1984 GMT-0500'); // May 1st of 1984
+		const RANGE_END = new Date('06/01/1984 GMT-0500'); // Jun 1st of 1984
+
+		it('for a date before the range', () => {
+			const dateBeforeRange = new Date('04/30/1984 00:00 GMT-0500'); // Apr 30st of 1984
+			const isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, dateBeforeRange);
+			expect(isDateInRange, `date ${dateBeforeRange} is before the given range`).to.be.false;
+		});
+
+		it('for a date between the range', () => {
+			const dateBeforeRange = new Date('05/20/1984 GMT-0500'); // May 20th of 1984
+			let isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, dateBeforeRange);
+			expect(isDateInRange, `date ${dateBeforeRange} is in between the given range`).to.be.true;
+
+			isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, RANGE_START);
+			expect(isDateInRange, `date ${dateBeforeRange} is in between the given range`).to.be.true;
+		});
+
+		it('for a date after the range', () => {
+			const dateBeforeRange = new Date('06/20/1984 GMT-0500'); // Jun 20th of 1984
+			let isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, dateBeforeRange);
+			expect(isDateInRange, `date ${dateBeforeRange} is after the given range`).to.be.false;
+
+			isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, RANGE_END);
+			expect(isDateInRange, `date ${dateBeforeRange} is after the given range`).to.be.false;
 		});
 	});
 });
