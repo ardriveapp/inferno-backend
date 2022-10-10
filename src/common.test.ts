@@ -409,17 +409,17 @@ describe('common methods', () => {
 
 	describe('isDateInRangeOfDays method', () => {
 		// Format: MM/DD/YYYY
-		const RANGE_START = new Date('05/01/1984 GMT-0500'); // May 1st of 1984
-		const RANGE_END = new Date('06/01/1984 GMT-0500'); // Jun 1st of 1984
+		const RANGE_START = new Date('05/01/1984'); // May 1st of 1984
+		const RANGE_END = new Date('06/01/1984'); // Jun 1st of 1984
 
 		it('for a date before the range', () => {
-			const dateBeforeRange = new Date('04/30/1984 00:00 GMT-0500'); // Apr 30st of 1984
+			const dateBeforeRange = new Date('04/30/1984'); // Apr 30st of 1984
 			const isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, dateBeforeRange);
 			expect(isDateInRange, `date ${dateBeforeRange} is before the given range`).to.be.false;
 		});
 
 		it('for a date between the range', () => {
-			const dateBeforeRange = new Date('05/20/1984 GMT-0500'); // May 20th of 1984
+			const dateBeforeRange = new Date('05/20/1984'); // May 20th of 1984
 			let isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, dateBeforeRange);
 			expect(isDateInRange, `date ${dateBeforeRange} is in between the given range`).to.be.true;
 
@@ -428,7 +428,7 @@ describe('common methods', () => {
 		});
 
 		it('for a date after the range', () => {
-			const dateBeforeRange = new Date('06/20/1984 GMT-0500'); // Jun 20th of 1984
+			const dateBeforeRange = new Date('06/20/1984'); // Jun 20th of 1984
 			let isDateInRange = isDateInRangeOfDays(RANGE_START, RANGE_END, dateBeforeRange);
 			expect(isDateInRange, `date ${dateBeforeRange} is after the given range`).to.be.false;
 
