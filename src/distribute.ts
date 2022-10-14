@@ -75,45 +75,49 @@ export async function createTokenDistributionTransactions(wallets: Rewards): Pro
 
 	for (const wallet of wallets) {
 		const { address, rewards, rankPosition } = wallet;
-		console.log(`Creating transaction to send ${rewards} ARDRIVE to ${address}
-`);
+		console.log(`Creating transaction to send ${rewards} ARDRIVE to ${address}`);
+		if (isBlockedWallet(address)) {
+			console.log(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+			console.log(`${address} is a blocked wallet.  Skipping`);
+			console.log(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+		} else {
+			const tags = {
+				'App-Name': 'SmartWeaveAction',
+				'App-Version': '0.3.0',
+				Cannon: 'ArDrive Usage Rewards: Inferno',
+				Contract: communityTxId, // The ArDrive Profit Sharing Community Contract
+				Input: JSON.stringify({
+					function: 'transfer',
+					target: address,
+					qty: rewards
+				})
+			};
 
-		const tags = {
-			'App-Name': 'SmartWeaveAction',
-			'App-Version': '0.3.0',
-			Cannon: 'ArDrive Usage Rewards: Inferno',
-			Contract: communityTxId, // The ArDrive Profit Sharing Community Contract
-			Input: JSON.stringify({
-				function: 'transfer',
+			const tx = await arweave.createTransaction(
+				{
+					target: address,
+					data: Math.random().toString().slice(-4)
+				},
+				keyfile
+			);
+			// Increase the default reward by 2.5x to ensure these transactions get processed in the mempool
+			tx.reward = Math.floor(+tx.reward * 2.5).toString();
+
+			// Add tags
+			for (const [key, value] of Object.entries(tags)) {
+				tx.addTag(key, value.toString());
+			}
+
+			await arweave.transactions.sign(tx, keyfile);
+
+			transactions.push({
+				id: tx.id,
+				tx,
 				target: address,
-				qty: rewards
-			})
-		};
-
-		const tx = await arweave.createTransaction(
-			{
-				target: address,
-				data: Math.random().toString().slice(-4)
-			},
-			keyfile
-		);
-		// Increase the default reward by 2.5x to ensure these transactions get processed in the mempool
-		tx.reward = Math.floor(+tx.reward * 2.5).toString();
-
-		// Add tags
-		for (const [key, value] of Object.entries(tags)) {
-			tx.addTag(key, value.toString());
+				qty: rewards,
+				rankPosition
+			});
 		}
-
-		await arweave.transactions.sign(tx, keyfile);
-
-		transactions.push({
-			id: tx.id,
-			tx,
-			target: address,
-			qty: rewards,
-			rankPosition
-		});
 	}
 
 	return transactions;
@@ -143,5 +147,16 @@ function parseKeyFile(keyfile: string) {
 	} catch (err) {
 		const message = (err instanceof Error && err.message) || JSON.stringify(err);
 		throw new Error(message);
+	}
+}
+
+function isBlockedWallet(address: string) {
+	const blockedAddresses = {
+		"wVpXHk8fTfPyW0y5S9CsXwUHYJ-L4LigBbyrchoJBrc": "ToS violation"
+	}
+	if (address in blockedAddresses) {
+		return true;
+	} else {
+		return false;
 	}
 }
