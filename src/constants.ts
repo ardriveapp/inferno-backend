@@ -27,14 +27,13 @@ export const UPLOAD_DATA_TIP_TYPE = 'data upload';
 export const APP_NAME_TAG = 'App-Name';
 export const BOOST_TAG = 'Boost';
 export const APP_VERSION_TAG = 'App-Version';
+export const WINSTON_AR_ASPECT = 1_000_000_000_000;
 export const WEB_APP_NAME = 'ArDrive-Web';
 export const FLUTTER_APP_NAME = 'ArDrive-App';
 export const CLI_APP_NAME = 'ArDrive-CLI';
 export const SYNC_APP_NAME = 'ArDrive-Sync';
 export const CORE_APP_NAME = 'ArDrive-Core';
 export const VALID_APP_NAMES = [WEB_APP_NAME, FLUTTER_APP_NAME, CLI_APP_NAME, SYNC_APP_NAME, CORE_APP_NAME];
-export const WINSTON_AR_ASPECT = 1_000_000_000_000;
-
 export const defaultGatewayHost = 'arweave.net';
 export const defaultGatewayProtocol = 'https';
 export const defaultGatewayPort = 443;
