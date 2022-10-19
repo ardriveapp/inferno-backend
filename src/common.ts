@@ -243,16 +243,34 @@ export function isSemanticVersionGreaterThan(appVersion_a: string, appVersion_b:
 	return false;
 }
 
+/**
+ * Returns true if the date is after the day_start and before the day_end
+ * @param day_start the day when the range starts
+ * @param day_end the day when the range ends (not included)
+ * @param date the date to check
+ */
+export function isDateInRangeOfDays(day_start: Date, day_end: Date, date: Date): boolean {
+	// take the amount of days in the given range
+	const totalAmountOfDaysInRange = daysDiffInEST(day_start, day_end);
+
+	// how many days are missing to reach the start? (zero if already happened)
+	const pendingDaysToStart = daysDiffInEST(date, day_start);
+	// how many days are missing to reach the end? (zero if already happened)
+	const pendingsDaysToEnd = daysDiffInEST(date, day_end);
+
+	const isDateAfterStart = pendingDaysToStart === 0;
+	const isDateBeforeEnd = pendingsDaysToEnd <= totalAmountOfDaysInRange && pendingsDaysToEnd !== 0;
+	const isDateInRange = isDateAfterStart && isDateBeforeEnd;
+
+	return isDateInRange;
+}
+
 export function daysDiffInEST(prev: Date, curr: Date): number {
 	const prevEstDate = dateToEST(prev);
 	const currEstDate = dateToEST(curr);
 
 	let daysCount = 0;
-	const cursorDate = new Date(prevEstDate.getTime());
-	cursorDate.setHours(0);
-	cursorDate.setMinutes(0);
-	cursorDate.setSeconds(0);
-	cursorDate.setMilliseconds(0);
+	const cursorDate = begginingOfDayOfDate(prevEstDate);
 
 	while (currEstDate.getTime() > cursorDate.getTime()) {
 		const cursorDay = cursorDate.getDate();
@@ -294,12 +312,8 @@ export function weeksDiffInEST(prev: Date, curr: Date): number {
 
 export function dateToSunday(date: Date) {
 	const dayOfWeek = date.getDay();
-	const newDate = new Date(date.getTime());
+	const newDate = begginingOfDayOfDate(date);
 	newDate.setDate(newDate.getDate() - dayOfWeek);
-	newDate.setHours(0);
-	newDate.setMinutes(0);
-	newDate.setSeconds(0);
-	newDate.setMilliseconds(0);
 	return newDate;
 }
 
@@ -315,6 +329,19 @@ export function dateToUTC(d: Date): Date {
 	const offset = date.getTimezoneOffset(); // getting offset to make time in gmt+0 zone (UTC) (for gmt+5 offset comes as -300 minutes)
 	date.setMinutes(date.getMinutes() + offset); // date now in UTC time
 	return date;
+}
+
+export function begginingOfDayOfDate(date: Date): Date {
+	// clone the date
+	const begginingOfDay = new Date(date.getTime());
+
+	// set all units below DAY to zero
+	begginingOfDay.setHours(0);
+	begginingOfDay.setMinutes(0);
+	begginingOfDay.setSeconds(0);
+	begginingOfDay.setMilliseconds(0);
+
+	return begginingOfDay;
 }
 
 export function heightAscSortFunction(edge_a: GQLEdgeInterface, edge_b: GQLEdgeInterface): number {
