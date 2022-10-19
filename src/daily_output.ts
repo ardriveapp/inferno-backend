@@ -344,6 +344,9 @@ export class DailyOutput {
 	};
 
 	private doublesData(txDate: Date, appName?: string, appPlatform?: string): boolean {
+		// TODO: disabled until iOS gets released to AppStore
+		return false;
+
 		const MOBILE_x2_START_DATE = new Date('10/30/2022'); // Oct 30th, 2022
 		const MOBILE_x2_END_DATE = new Date('11/27/2022'); // Nov 27th, 2022
 
