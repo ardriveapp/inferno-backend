@@ -197,11 +197,20 @@ export const ardriveOracle = new ArDriveContractOracle([
 export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDriveContractOracle): Promise<boolean> {
 	const tags = node.tags;
 	const boostValue = +(tags.find((tag) => tag.name === BOOST_TAG)?.value || '1');
-	const appName = tags.find((tag) => tag.name === APP_NAME_TAG)?.value;
-	const appVersion = tags.find((tag) => tag.name === APP_VERSION_TAG)?.value;
+	const appNameTags = tags.filter((tag) => tag.name === APP_NAME_TAG);
+	const appVersionTags = tags.filter((tag) => tag.name === APP_VERSION_TAG);
 	const bundledIn = node.bundledIn;
+
 	const isV2Tx = !bundledIn;
-	if (appName === WEB_APP_NAME && appVersion && !isSemanticVersionGreaterThan(appVersion, '1.14.1') && isV2Tx) {
+	const isWebApp = appNameTags.some((appNameTag) => appNameTag.value === WEB_APP_NAME);
+	const isAppVersionGreaterThan1_14_1 = appVersionTags.some((appVersionTag) =>
+		// FIXME: this way of doing it cannot distinguish between multiple apps' version
+		// might result in false positives
+
+		// We are good until we bump version of the second app (eg smartweave), and it's greater than 1.14.1
+		isSemanticVersionGreaterThan(appVersionTag.value, '1.14.1')
+	);
+	if (isWebApp && !isAppVersionGreaterThan1_14_1 && isV2Tx) {
 		// we ignore web v2 transactions' tip as it's not possible to validate
 		return true;
 	}

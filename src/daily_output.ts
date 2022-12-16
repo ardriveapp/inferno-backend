@@ -267,9 +267,14 @@ export class DailyOutput {
 		const queryDate = new Date(queryTimestamp);
 
 		// x2 data count for Mobile
-		const appName = tags.find((tag) => tag.name === 'App-Name')?.value;
+		const appNameTags = tags.filter((tag) => tag.name === 'App-Name');
 		const appPlatform = tags.find((tag) => tag.name === 'App-Platform')?.value;
-		const dataSizeDoubledForMobile = this.doublesData(queryDate, appName, appPlatform) ? dataSize * 2 : dataSize;
+		const dataSizeDoubledForMobile = appNameTags.reduce(
+			(accumulator, appNameTag) => accumulator || this.doublesData(queryDate, appNameTag.value, appPlatform),
+			false
+		)
+			? dataSize * 2
+			: dataSize;
 
 		if (fee && isTipValid && (isV2DataTx || isBundleTransaction)) {
 			const previousTimestamp = this.latestTimestamp * 1000;

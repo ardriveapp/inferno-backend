@@ -2,9 +2,9 @@ import { createHash } from 'crypto';
 import { APP_NAME_TAG, VALID_APP_NAMES } from '../constants';
 import { GQLEdgeInterface, GQLTagInterface } from '../gql_types';
 
-export function ardriveTxFilter(edge: GQLEdgeInterface) {
-	const appName = edge.node.tags.find((tag) => tag.name === APP_NAME_TAG)?.value;
-	return !!appName && VALID_APP_NAMES.includes(appName);
+export function ardriveTxFilter(edge: GQLEdgeInterface): boolean {
+	const appNameTags = edge.node.tags.filter((tag) => tag.name === APP_NAME_TAG);
+	return VALID_APP_NAMES.some((validAppName) => appNameTags.find((tag) => tag.value === validAppName));
 }
 
 export function decodeTags(encodedTags: GQLTagInterface[]): GQLTagInterface[] {
@@ -21,11 +21,11 @@ export function decodeTags(encodedTags: GQLTagInterface[]): GQLTagInterface[] {
 	return tags;
 }
 
-export function sha256B64Url(input: Buffer) {
+export function sha256B64Url(input: Buffer): string {
 	return toB64url(createHash('sha256').update(input).digest());
 }
 
-export function toB64url(buffer: Buffer) {
+export function toB64url(buffer: Buffer): string {
 	return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
