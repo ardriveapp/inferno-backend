@@ -206,6 +206,8 @@ export async function validateTxTip(node: GQLNodeInterface, ardriveOracle: ArDri
 	const isAppVersionGreaterThan1_14_1 = appVersionTags.some((appVersionTag) =>
 		// FIXME: this way of doing it cannot distinguish between multiple apps' version
 		// might result in false positives
+
+		// We are good until we bump version of the second app (eg smartweave), and it's greater than 1.14.1
 		isSemanticVersionGreaterThan(appVersionTag.value, '1.14.1')
 	);
 	if (isWebApp && !isAppVersionGreaterThan1_14_1 && isV2Tx) {
