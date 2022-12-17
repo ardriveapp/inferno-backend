@@ -51,15 +51,15 @@ export class DailyOutput {
 	 */
 	public async feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
 		for (const edge of queryResult) {
-			await this.aggregateData(edge);
-
-			this.currentHieght = edge.node.block.height;
 			if (edge.node.block.height && this.currentHieght !== edge.node.block.height) {
 				// only after we find a new block, because we are sure that there are no more transactions belonging to an already found bundle
 				await this.finishDataAggregation();
 
 				this.write();
 			}
+			this.currentHieght = edge.node.block.height;
+
+			await this.aggregateData(edge);
 		}
 	}
 
