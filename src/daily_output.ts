@@ -57,6 +57,8 @@ export class DailyOutput {
 			if (edge.node.block.height && this.currentHieght !== edge.node.block.height) {
 				// only after we find a new block, because we are sure that there are no more transactions belonging to an already found bundle
 				await this.finishDataAggregation();
+
+				this.write();
 			}
 		}
 	}
@@ -77,6 +79,7 @@ export class DailyOutput {
 		bundleTxIDs.forEach((txId) => {
 			if (!this.bundleFileCount[txId]) {
 				this.sumFile(this.bundlesTips[txId].address);
+				delete this.bundlesTips[txId];
 			}
 		});
 
@@ -122,8 +125,6 @@ export class DailyOutput {
 			this.resetWalletDay(address);
 		}
 		this.resetRanksDay();
-
-		this.write();
 	}
 
 	private caclulateWeeklyRewards(): void {
@@ -187,8 +188,6 @@ export class DailyOutput {
 		}
 		this.updateTotalRewards();
 		this.resetRanksWeek();
-
-		this.write();
 	}
 
 	private caclulateTotalRanks(): void {
