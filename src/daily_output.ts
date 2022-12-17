@@ -33,8 +33,11 @@ export class DailyOutput {
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
+	private currentHieght: number;
 
-	constructor(private heightRange: [number, number]) {}
+	constructor(private heightRange: [number, number]) {
+		this.currentHieght = heightRange[0];
+	}
 
 	/**
 	 * @param {StakedPSTHolders} stakedPSTHolders key/value of address/tokens above 200 ARDRIVE locked for at least 21600 blocks (~30 days)
@@ -49,8 +52,13 @@ export class DailyOutput {
 	public async feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
 		for (const edge of queryResult) {
 			await this.aggregateData(edge);
+
+			this.currentHieght = edge.node.block.height;
+			if (edge.node.block.height && this.currentHieght !== edge.node.block.height) {
+				// only after we find a new block, because we are sure that there are no more transactions belonging to an already found bundle
+				await this.finishDataAggregation();
+			}
 		}
-		await this.finishDataAggregation();
 	}
 
 	/**
@@ -114,6 +122,8 @@ export class DailyOutput {
 			this.resetWalletDay(address);
 		}
 		this.resetRanksDay();
+
+		this.write();
 	}
 
 	private caclulateWeeklyRewards(): void {
@@ -177,6 +187,8 @@ export class DailyOutput {
 		}
 		this.updateTotalRewards();
 		this.resetRanksWeek();
+
+		this.write();
 	}
 
 	private caclulateTotalRanks(): void {

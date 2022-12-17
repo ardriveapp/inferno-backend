@@ -37,10 +37,24 @@ jobs:
             - name: Fetch previous output
               run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 
+            - name: Copy the initial output
+              run: cp ./daily_output.json ./daily_output_initial.json
+
             - name: Run
               run: bash ".github/workflows/aggregate.sh"
 
+            # https://github.com/orgs/community/discussions/27148#discussioncomment-3254824
+            # is this the correct way of setting an action env var?
+            - name: Check for changes in the output
+              run: |
+                if [ "$(jq -n --argjson a "´cat ./daily_output.json´" --argjson b "´cat ./daily_output_initial.json´" '$a != $b')" -eq "true" ]; then
+                  echo "::set-env name=changes_exist::true"
+                else
+                  echo "::set-env name=changes_exist::false"
+                fi
+
             - name: Publish output
+              if: ${{ env.changes_exist == 'true' }}
               run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
 
             - name: Commit GQL cache

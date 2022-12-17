@@ -82,6 +82,7 @@ async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promis
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
 	const edges = await getAllArDriveTransactionsWithin(new HeightRange(minimumBlock, maximumBlock));
+
+	// TODO: Could take instead a stream
 	await output.feedGQLData(edges);
-	output.write();
 }
