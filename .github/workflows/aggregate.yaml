@@ -46,6 +46,7 @@ jobs:
             # https://github.com/orgs/community/discussions/27148#discussioncomment-3254824
             # is this the correct way of setting an action env var?
             - name: Check for changes in the output
+              if: always()
               run: |
                 if [ "$(jq -n --argjson a "´cat ./daily_output.json´" --argjson b "´cat ./daily_output_initial.json´" '$a != $b')" -eq "true" ]; then
                   echo "::set-env name=changes_exist::true"
