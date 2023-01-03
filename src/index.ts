@@ -76,7 +76,7 @@ function run(): void {
  * @param maxBlock an integer representing the block until where to query the data
  */
 async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promise<void> {
-	const minimumBlock = minBlock ?? getMinBlockHeight();
+	const minimumBlock = minBlock || getMinBlockHeight();
 	const maximumBlock = maxBlock ?? (await getBlockHeight());
 	const output = new DailyOutput([minimumBlock, maximumBlock]);
 	const PSTHolders = await getWalletsEligibleForStreak();
