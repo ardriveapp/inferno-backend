@@ -44,7 +44,7 @@ describe('DailyOutput class', () => {
 
 		it('Throws if the previous block height is ahead of some query result', () => {
 			return expectAsyncErrorThrow({
-				promiseToError: output.feedGQLData([
+				promiseToError: output.writeOutputFrom([
 					{
 						cursor: '914100',
 						node: {
