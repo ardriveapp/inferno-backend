@@ -174,6 +174,8 @@ export class GQLCache {
 		if (!this.cacheFolderExists) {
 			return [];
 		}
+
+		// These are not sorted (these are, but the OS is doing the job, might differ within different platforms)
 		const listResult = readdirSync(CACHE_FOLDER);
 		return listResult;
 	}

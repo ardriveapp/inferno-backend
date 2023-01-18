@@ -33,8 +33,11 @@ export class DailyOutput {
 	private latestTimestamp = getLastTimestamp();
 	private bundlesTips: { [txId: string]: { tip: number; size: number; address: string } } = {};
 	private bundleFileCount: { [txId: string]: number } = {};
+	private currentHieght: number;
 
-	constructor(private heightRange: [number, number]) {}
+	constructor(private heightRange: [number, number]) {
+		this.currentHieght = heightRange[0];
+	}
 
 	/**
 	 * @param {StakedPSTHolders} stakedPSTHolders key/value of address/tokens above 200 ARDRIVE locked for at least 21600 blocks (~30 days)
@@ -46,11 +49,20 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public async feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
+	public async writeOutputFrom(queryResult: GQLEdgeInterface[]): Promise<void> {
 		for (const edge of queryResult) {
+			if (edge.node.block.height && this.currentHieght !== edge.node.block.height) {
+				// only after we find a new block, because we are sure that there are no more transactions belonging to an already found bundle
+				await this.finishAggregatingBlock();
+			}
+			this.currentHieght = edge.node.block.height;
+
 			await this.aggregateData(edge);
 		}
-		await this.finishDataAggregation();
+
+		this.data.blockHeight = this.heightRange[1];
+
+		await this.finishAggregatingBlock();
 	}
 
 	/**
@@ -61,19 +73,18 @@ export class DailyOutput {
 	 * - group effort rewards, and
 	 * - streak rewards
 	 */
-	private async finishDataAggregation(): Promise<void> {
-		console.log(`Finishing data aggregation...`);
-
+	private async finishAggregatingBlock(): Promise<void> {
 		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
 			if (!this.bundleFileCount[txId]) {
 				this.sumFile(this.bundlesTips[txId].address);
+				delete this.bundlesTips[txId];
 			}
 		});
 
 		// calculate change in percentage of the uploaded data and rank position
-		this.data.blockHeight = this.heightRange[1];
+		this.data.blockHeight = this.currentHieght;
 		this.data.timestamp = this.latestTimestamp;
 
 		this.caclulateChangeOfUploadVolume();
@@ -85,6 +96,8 @@ export class DailyOutput {
 		// TODO: determine if the wallets has uploaded data for 7 days in a row
 
 		this.data.lastUpdated = Date.now();
+
+		this.write();
 	}
 
 	private caclulateChangeOfUploadVolume(): void {

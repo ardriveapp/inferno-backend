@@ -76,12 +76,13 @@ function run(): void {
  * @param maxBlock an integer representing the block until where to query the data
  */
 async function aggregateOutputData(minBlock?: number, maxBlock?: number): Promise<void> {
-	const minimumBlock = minBlock ?? getMinBlockHeight();
+	const minimumBlock = minBlock || getMinBlockHeight();
 	const maximumBlock = maxBlock ?? (await getBlockHeight());
 	const output = new DailyOutput([minimumBlock, maximumBlock]);
 	const PSTHolders = await getWalletsEligibleForStreak();
 	await output.feedPSTHolders(PSTHolders);
 	const edges = await getAllArDriveTransactionsWithin(new HeightRange(minimumBlock, maximumBlock));
-	await output.feedGQLData(edges);
-	output.write();
+
+	// TODO: Could take instead a stream
+	await output.writeOutputFrom(edges);
 }

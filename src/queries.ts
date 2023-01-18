@@ -52,7 +52,7 @@ async function getStakedPSTHolders(): Promise<StakedPSTHolders> {
  */
 export async function getAllArDriveTransactionsWithin(range: HeightRange): Promise<GQLEdgeInterface[]> {
 	const cache = new GQLCache(range);
-	const nonCachedRanges = cache.getNonCachedRangesWithin().reverse();
+	const nonCachedRanges = cache.getNonCachedRangesWithin();
 
 	console.log('Height ranges to query are', nonCachedRanges.length);
 

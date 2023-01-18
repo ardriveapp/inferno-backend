@@ -37,10 +37,20 @@ jobs:
             - name: Fetch previous output
               run: ardrive download-file -f 7fa5d4e3-0087-422a-acb3-2e481d98d08b
 
-            - name: Run
+            - name: Copy the initial output
+              run: cp ./daily_output.json ./daily_output_initial.json
+
+            - name: Run the aggregate command
               run: bash ".github/workflows/aggregate.sh"
 
+            - name: Check for changes in the output
+              if: always()
+              run: |
+                IS_THERE_DIFF="$(jq -n --argjson a "$(cat ./daily_output.json)" --argjson b "$(cat ./daily_output_initial.json)" '$a != $b')" \
+                echo "::set-env name=OUTPUT_HAS_CHANGED::$IS_THERE_DIFF" // vs. export OUTPUT_HAS_CHANGED="$IS_THERE_DIFF" (?)
+
             - name: Publish output
+              if: ${{ env.OUTPUT_HAS_CHANGED == 'true' }}
               run: ardrive upload-file --local-path ./daily_output.json -F "d62a47c3-0b9d-4442-ac72-252a239d0469" -w /tmp/wallet --no-bundle --upsert
 
             - name: Commit GQL cache
