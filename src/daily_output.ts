@@ -49,13 +49,11 @@ export class DailyOutput {
 	/**
 	 * @param {GQLEdgeInterface[]} queryResult the edges of ArFSTransactions only - 50 block before the latest
 	 */
-	public async feedGQLData(queryResult: GQLEdgeInterface[]): Promise<void> {
+	public async writeOutputFrom(queryResult: GQLEdgeInterface[]): Promise<void> {
 		for (const edge of queryResult) {
 			if (edge.node.block.height && this.currentHieght !== edge.node.block.height) {
 				// only after we find a new block, because we are sure that there are no more transactions belonging to an already found bundle
-				await this.finishDataAggregation();
-
-				this.write();
+				await this.finishAggregatingBlock();
 			}
 			this.currentHieght = edge.node.block.height;
 
@@ -63,8 +61,8 @@ export class DailyOutput {
 		}
 
 		this.data.blockHeight = this.heightRange[1];
-		// Should we await this.finishDataAggregation(); at this point?
-		this.write();
+
+		await this.finishAggregatingBlock();
 	}
 
 	/**
@@ -75,7 +73,7 @@ export class DailyOutput {
 	 * - group effort rewards, and
 	 * - streak rewards
 	 */
-	private async finishDataAggregation(): Promise<void> {
+	private async finishAggregatingBlock(): Promise<void> {
 		// aggregate +1 file count to the non unbundled bundles
 		const bundleTxIDs = Object.keys(this.bundlesTips);
 		bundleTxIDs.forEach((txId) => {
@@ -98,6 +96,8 @@ export class DailyOutput {
 		// TODO: determine if the wallets has uploaded data for 7 days in a row
 
 		this.data.lastUpdated = Date.now();
+
+		this.write();
 	}
 
 	private caclulateChangeOfUploadVolume(): void {
