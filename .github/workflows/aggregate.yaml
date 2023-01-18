@@ -40,7 +40,7 @@ jobs:
             - name: Copy the initial output
               run: cp ./daily_output.json ./daily_output_initial.json
 
-            - name: Run
+            - name: Run the aggregate command
               run: bash ".github/workflows/aggregate.sh"
 
             - name: Check for changes in the output
